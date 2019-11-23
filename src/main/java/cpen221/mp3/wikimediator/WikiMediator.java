@@ -5,7 +5,6 @@ import java.util.List;
 public class WikiMediator {
 
     /* TODO: Implement this datatype
-
         You must implement the methods with the exact signatures
         as provided in the statement for this mini-project.
 
@@ -24,7 +23,7 @@ public class WikiMediator {
      * @return
      */
     public List<String> simpleSearch(String query, int limit) {
-
+        return null;
     }
 
     /**
@@ -35,7 +34,7 @@ public class WikiMediator {
      * @return
      */
     public String getPage(String pageTitle) {
-
+        return null;
     }
 
     /**
@@ -48,7 +47,7 @@ public class WikiMediator {
      * @return
      */
     public List<String> getConnectedPages(String pageTitle, int hops) {
-
+        return null;
     }
 
     /**
@@ -60,7 +59,7 @@ public class WikiMediator {
      * @return
      */
     public List<String> zeitgeist(int limit) {
-
+        return null;
     }
 
     /**
@@ -71,7 +70,7 @@ public class WikiMediator {
      * @return
      */
     public List<String> trending(int limit) {
-
+        return null;
     }
 
     /**
@@ -82,7 +81,7 @@ public class WikiMediator {
      * @return
      */
     public int peakLoad30s() {
-
+        return -1;
     }
 
 }
