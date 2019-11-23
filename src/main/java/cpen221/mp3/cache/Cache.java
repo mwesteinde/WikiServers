@@ -8,6 +8,9 @@ public class Cache<T extends Cacheable> {
     /* the default timeout value is 3600s */
     public static final int DTIMEOUT = 3600;
 
+    /* The number of most recently accessed pages cached */
+    private static final int RECENT_PAGES = 256;
+
     /* TODO: Implement this datatype */
 
     /**
