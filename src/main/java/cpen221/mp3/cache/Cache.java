@@ -8,9 +8,6 @@ public class Cache<T extends Cacheable> {
     /* the default timeout value is 3600s */
     public static final int DTIMEOUT = 3600;
 
-    /* The number of most recently accessed pages cached */
-    private static final int RECENT_PAGES = 256;
-
     /* TODO: Implement this datatype */
 
     /**
@@ -46,7 +43,7 @@ public class Cache<T extends Cacheable> {
      * @param id the identifier of the object to be retrieved
      * @return the object that matches the identifier from the cache
      */
-    T get(String id) {
+    public T get(String id) {
         /* TODO: change this */
         /* Do not return null. Throw a suitable checked exception when an object
             is not in the cache. */
