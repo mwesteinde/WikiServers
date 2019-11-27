@@ -156,12 +156,15 @@ public class Cache<T extends Cacheable> {
     public boolean update(T t) {
         boolean returned = false;
         Object o = expiry();
+        long time = java.lang.System.currentTimeMillis() / 1000;
         String id = t.id();
         for (Map.Entry i: cache.entrySet()) {
             T now = (T) i.getKey();
             if (now.id().equals(id)) {
                 returned = true;
-
+                cache.remove(now);
+                cache.put(t, time);
+                break;
             }
         }
 
