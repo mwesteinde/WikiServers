@@ -3,7 +3,7 @@ package cpen221.mp3.cache;
 public class StringCacheable implements Cacheable {
     private String id;
 
-    public StringCacheable (String str) {
+    public StringCacheable(String str) {
         this.id = str;
     }
 
