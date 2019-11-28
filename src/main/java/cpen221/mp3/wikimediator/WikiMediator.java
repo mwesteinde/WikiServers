@@ -5,89 +5,32 @@ import cpen221.mp3.cache.Cacheable;
 import fastily.jwiki.core.Wiki;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 
-//TODO: should T extends cacheable be used?
+//TODO: should T extends cacheable be used?d
 public class WikiMediator<T extends Cacheable> {
     // TODO: write RI and AF
     // AF: explains the variables in their abstract context assuming RI is met
     // RI: covers entire domain that variables could be in and makes sure they can only take values that make sense
 
-    /*
-     * Representation Invariant:
-     *
-     *
-     * Abstraction Function:
-     *
-     */
-
-    /*
-    Representation Invariant:
-
-    Abstraction Function:
-     */
-    private class Query implements Comparable {
-        /* term searched for */
-        String query;
-        /* most recent time queried */
-        Instant timestamp;
-        /* number of times query was searched for */
-        Integer num = 0;
-
-        /**
-         * Creates a new Query object with the string queried.
-         *
-         * @param s String searched for by user.
-         */
-        public Query(String s) {
-            query = s;
-            timestamp = Instant.now();
-            num++;
-        }
-
-        @Override
-        public int compareTo(Object o) {
-            if (o == null) {
-                throw new NullPointerException();
-            }
-            if (o instanceof WikiMediator<?>.Query) {
-                Query newO = (Query) o;
-                if (newO.num > num) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            }
-            return 0;
-        }
-
-        /**
-         * Modifies query when a user searches for it again by updating the timestamp and number of searches.
-         *
-         * @param s Query searched for.
-         */
-        public void update(String s) {
-            if (this.query.equals(s)) {
-                this.timestamp = Instant.now();
-                this.num++;
-            }
-        }
-
-    }
-
     /* a cache to store search results */
     private Cache wikiCache = new Cache();
+
     /* access to wikipedia */
     private Wiki wiki = new Wiki("en.wikipedia.org");
+
     /* a set of all queries from simpleSearch and getPage and how many times they have occurred */
-    private TreeSet<Query> queries = new TreeSet<>();
+    private TreeSet<Query> qTree = new TreeSet<>();
+
     /* keeps track of the Strings queried */
-    private ArrayList<String> queryStrings = new ArrayList<>();
+    private ArrayList<Query> qList = new ArrayList<>();
+
+    private HashMap<String, Query> qMap = new HashMap<>();
 
     /* TODO: Implement this datatype
         You must implement the methods with the exact signatures
@@ -109,6 +52,7 @@ public class WikiMediator<T extends Cacheable> {
      */
     public List<String> simpleSearch(String query, int limit) {
         queried(query);
+        //TODO: use cache
 
         ArrayList<String> results = wiki.search(query, limit);
         return results.subList(0, limit);
@@ -123,6 +67,8 @@ public class WikiMediator<T extends Cacheable> {
      */
     public String getPage(String pageTitle) {
         queried(pageTitle);
+        //TODO: use cache
+
 
         return wiki.getPageText(pageTitle);
     }
@@ -163,6 +109,17 @@ public class WikiMediator<T extends Cacheable> {
      * @return The most common 'String's searched for with simpleSearch and getPage.
      */
     public List<String> zeitgeist(int limit) {
+        //TODO: use cache
+        List<String> mostCommonQueries = new ArrayList<>();
+
+        for(Query q: this.qTree.descendingSet()) {
+            if (mostCommonQueries.size() < limit) {
+                mostCommonQueries.add(q.getQuery());
+            } if (mostCommonQueries.size() == limit) {
+                return mostCommonQueries;
+            }
+        }
+        return mostCommonQueries;
     }
 
     /**
@@ -173,11 +130,19 @@ public class WikiMediator<T extends Cacheable> {
      * @return The most commonly queried Strings within the last 30 seconds.
      */
     public List<String> trending(int limit) {
+        //TODO: use cache
         // could work?
-        return this.queries.descendingSet().stream()
-                .filter(q -> q.timestamp.isAfter(Instant.now().minus(30, ChronoUnit.SECONDS)))
-                .map(q -> q.query)
+        TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
+        Instant now = Instant.now();
+        List<String> sortedQueries = qTree.descendingSet().stream()
+                .filter(q -> q.within30S(now))
+                .map(Query::getQuery)
                 .collect(Collectors.toList());
+        if (sortedQueries.size() <= limit) {
+            return sortedQueries;
+        } else {
+            return sortedQueries.subList(0, limit-1);
+        }
 //
 //        List<String> latestQueries = new ArrayList<String>();
 //
@@ -209,28 +174,17 @@ public class WikiMediator<T extends Cacheable> {
         return -1;
     }
 
-
     /**
-     * Creates a cache for this 'WikiMediator' if it does not already exist.
-     *
-     * @returns True if there is an existing cache, false otherwise.
-     */
-    private void cache(String s) {
-//        this.wikiCache.put(s);
-    }
-
-    /**
-     * Updates the list of queries.
+     * Updates the list of queries with a query.
      *
      * @param query The string queried.
      */
-    private void queried(Query query) {
-        if (queries.) {
-            queries.
+    private void queried(String query) {
+        if (qMap.containsKey(query)) {
+            Query qToUpdate = qMap.get(query);
+            qToUpdate.update(query);
         } else {
-            queries.put(query);
+            qMap.put(query, new Query(query));
         }
     }
-
-
 }
