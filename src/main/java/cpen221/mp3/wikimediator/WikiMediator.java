@@ -4,25 +4,90 @@ import cpen221.mp3.cache.Cache;
 import cpen221.mp3.cache.Cacheable;
 import fastily.jwiki.core.Wiki;
 
-import java.util.*;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 
 //TODO: should T extends cacheable be used?
 public class WikiMediator<T extends Cacheable> {
+    // TODO: write RI and AF
+    // AF: explains the variables in their abstract context assuming RI is met
+    // RI: covers entire domain that variables could be in and makes sure they can only take values that make sense
+
+    /*
+     * Representation Invariant:
+     *
+     *
+     * Abstraction Function:
+     *
+     */
+
+    /*
+    Representation Invariant:
+
+    Abstraction Function:
+     */
+    private class Query implements Comparable {
+        /* term searched for */
+        String query;
+        /* most recent time queried */
+        Instant timestamp;
+        /* number of times query was searched for */
+        Integer num = 0;
+
+        /**
+         * Creates a new Query object with the string queried.
+         *
+         * @param s String searched for by user.
+         */
+        public Query(String s) {
+            query = s;
+            timestamp = Instant.now();
+            num++;
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            if (o == null) {
+                throw new NullPointerException();
+            }
+            if (o instanceof WikiMediator<?>.Query) {
+                Query newO = (Query) o;
+                if (newO.num > num) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+
+        /**
+         * Modifies query when a user searches for it again by updating the timestamp and number of searches.
+         *
+         * @param s Query searched for.
+         */
+        public void update(String s) {
+            if (this.query.equals(s)) {
+                this.timestamp = Instant.now();
+                this.num++;
+            }
+        }
+
+    }
 
     /* a cache to store search results */
     private Cache wikiCache = new Cache();
     /* access to wikipedia */
     private Wiki wiki = new Wiki("en.wikipedia.org");
-    /* a map of all queries from simpleSearch and getPage and how many times they have occured */
-    private HashMap<String, Integer> queries = new HashMap<>();
-
-
-    //TODO: write RI and AF
-    /*
-    Representation invariant:
-    Abstraction function:
-     */
+    /* a set of all queries from simpleSearch and getPage and how many times they have occurred */
+    private TreeSet<Query> queries = new TreeSet<>();
+    /* keeps track of the Strings queried */
+    private ArrayList<String> queryStrings = new ArrayList<>();
 
     /* TODO: Implement this datatype
         You must implement the methods with the exact signatures
@@ -98,33 +163,38 @@ public class WikiMediator<T extends Cacheable> {
      * @return The most common 'String's searched for with simpleSearch and getPage.
      */
     public List<String> zeitgeist(int limit) {
-
-        if (this.queries.size() > limit) {
-            return new ArrayList<String>(this.queries.keySet());
-        }
-
-        TreeMap<Integer, String> sortedQueries = new TreeMap<>();
-        for(String s: this.queries.keySet()) {
-            sortedQueries.put(this.queries.get(s), s);
-        }
-
-        // trying to sort by value rather than key
-
-
-        return null;
     }
 
-    //TODO: figure this out...
     /**
      * Similar to `zeitgeist()`, but returns the most frequent
      * requests made in the last 30 seconds.
      *
-     * @param limit
-     * @return
+     * @param limit A limit for how many pages can be returned.
+     * @return The most commonly queried Strings within the last 30 seconds.
      */
     public List<String> trending(int limit) {
-
-        return null;
+        // could work?
+        return this.queries.descendingSet().stream()
+                .filter(q -> q.timestamp.isAfter(Instant.now().minus(30, ChronoUnit.SECONDS)))
+                .map(q -> q.query)
+                .collect(Collectors.toList());
+//
+//        List<String> latestQueries = new ArrayList<String>();
+//
+//
+//        for (Query q : this.queries.descendingSet()) {
+//            // adds query if the query was created within the last 30 seconds
+//            if (q.timestamp.isAfter(Instant.now().minus(30, ChronoUnit.SECONDS))) {
+//                latestQueries.add(q.query);
+//            }
+//            // returns the latest queries if the limit is reached
+//            if (latestQueries.size() == limit) {
+//                return latestQueries;
+//            }
+//        }
+//
+//        return latestQueries;
+//        return null;
     }
 
     /**
@@ -142,11 +212,11 @@ public class WikiMediator<T extends Cacheable> {
 
     /**
      * Creates a cache for this 'WikiMediator' if it does not already exist.
+     *
      * @returns True if there is an existing cache, false otherwise.
      */
-    private boolean cache(String s) {
+    private void cache(String s) {
 //        this.wikiCache.put(s);
-        return false;
     }
 
     /**
@@ -154,12 +224,13 @@ public class WikiMediator<T extends Cacheable> {
      *
      * @param query The string queried.
      */
-    private void queried(String query) {
-        if (queries.containsKey(query)) {
-            queries.replace(query, queries.get(query), queries.get(query)+1);
+    private void queried(Query query) {
+        if (queries.) {
+            queries.
         } else {
-            queries.put(query, 1);
+            queries.put(query);
         }
     }
+
 
 }
