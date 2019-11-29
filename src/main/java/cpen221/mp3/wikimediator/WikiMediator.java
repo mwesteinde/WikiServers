@@ -87,18 +87,27 @@ public class WikiMediator {
      * specified by `pageTitle`.
      *
      * @param pageTitle The title of the page to start hopping from.
-     * @param hops      The number of 'hops' to take from pageTitle.
+     * @param hops      The number of 'hops' to take from pageTitle, must be >0.
      * @return A a list of page titles within 'hops' of the page pageTitle.
      */
     public List<String> getConnectedPages(String pageTitle, int hops) {
         call();
 
-        List<String> hoppable;
+        List<String> hoppable = new ArrayList<>();
+        hoppable.add(pageTitle);
 
+        // Simply return the query
+        if (hops == 0) {
+            return hoppable;
+        }
+        // returns only the links connected pages to query if only one hop
         if (hops == 1) {
-            return wiki.getLinksOnPage(true, pageTitle);
-        } else {
-            hoppable = new ArrayList<>(wiki.getLinksOnPage(true, pageTitle));
+            hoppable.addAll(wiki.getLinksOnPage(true, pageTitle));
+            return hoppable;
+        }
+        // iterate through all pages and their connections if hops > 1
+        else {
+            hoppable.addAll(wiki.getLinksOnPage(true, pageTitle));
             List<String> extraHops = new ArrayList<>();
             for (String s : hoppable) {
                 extraHops.addAll(getConnectedPages(s, hops - 1));

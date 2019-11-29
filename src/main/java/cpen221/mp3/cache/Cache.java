@@ -68,7 +68,7 @@ public class Cache<T extends Cacheable> {
 
         time = java.lang.System.currentTimeMillis() / 1000;
 
-        //TODO: what is this doing?
+        //TODO: changed this because it was throwing an exception when the cache was empty
         Object last = expiry();
         if (cache.size() == 0) {
             cache.put(t, time);
@@ -86,12 +86,11 @@ public class Cache<T extends Cacheable> {
                 cache.put(t, time);
             }
         }
-
         updateSize();
         return full;
     }
 
-    //Checks for objects that have been in cache for longer than timeout
+    // Checks for objects that have been in cache for longer than timeout
     private Object expiry() {
         Object last = null;
         long time = java.lang.System.currentTimeMillis() / 1000;

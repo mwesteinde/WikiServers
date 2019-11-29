@@ -31,4 +31,13 @@ public class Tests {
         Assert.assertEquals(searchResults, wikiSearchResults);
     }
 
+    @Test
+    public void getConnectedTest() {
+        WikiMediator wikiM = new WikiMediator();
+        Wiki wiki = new Wiki("en.wikipedia.org");
+
+        Assert.assertTrue(wikiM.getConnectedPages("UBC", 0).get(0).equals("UBC"));
+
+    }
+
 }
