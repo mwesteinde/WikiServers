@@ -13,16 +13,22 @@ public class Cache<T extends Cacheable> {
     /* the default timeout value is 3600s */
     public static final int DTIMEOUT = 3600;
 
-    /* The number of most recently accessed pages cached */
+    /* The maximum number of most recently accessed pages cached */
     private static final int RECENT_PAGES = 256;
 
     private final int timeout;
     private final int capacity;
 
+    /* Tracks the maximum number of objects that have been cached since creation of this cache */
+    private int maxCached = 0;
+
+    private int currentlyCached;
+
+    //TODO:
     // AF:
     // RI:
 
-    private Map<T,Long> cache = new HashMap<>();
+    private Map<T, Long> cache = new HashMap<>();
 
     /* TODO: Implement this datatype */
 
@@ -32,8 +38,8 @@ public class Cache<T extends Cacheable> {
      * are removed from the cache.
      *
      * @param capacity the number of objects the cache can hold. Must be less than or equal to 256.
-     * @param timeout the duration, in seconds, an object should be in the cache before it times out. Must be less than
-     *                or equal to
+     * @param timeout  the duration, in seconds, an object should be in the cache before it times out. Must be less than
+     *                 or equal to
      */
     public Cache(int capacity, int timeout) {
         this.capacity = capacity;
@@ -54,6 +60,7 @@ public class Cache<T extends Cacheable> {
      *
      * @param t the value to add to the cache
      * @return true if an object was removed and false if not.
+     * @throws
      */
     public boolean put(T t) throws Exception {
         long time;
@@ -85,7 +92,7 @@ public class Cache<T extends Cacheable> {
         long time = java.lang.System.currentTimeMillis() / 1000;
         long longest = 0;
 
-        for (Map.Entry i: cache.entrySet()) {
+        for (Map.Entry i : cache.entrySet()) {
             long duration = time - (int) i.getValue();
             if (duration > this.timeout) {
                 cache.remove(i);
@@ -109,8 +116,8 @@ public class Cache<T extends Cacheable> {
 
         Object o = expiry();
 
-        for (Map.Entry i: cache.entrySet()) {
-            T now = (T)i.getKey();
+        for (Map.Entry i : cache.entrySet()) {
+            T now = (T) i.getKey();
             if (now.id().equals(id)) {
                 returned = now;
             }
@@ -158,7 +165,7 @@ public class Cache<T extends Cacheable> {
         Object o = expiry();
         long time = java.lang.System.currentTimeMillis() / 1000;
         String id = t.id();
-        for (Map.Entry i: cache.entrySet()) {
+        for (Map.Entry i : cache.entrySet()) {
             T now = (T) i.getKey();
             if (now.id().equals(id)) {
                 returned = true;
@@ -171,4 +178,20 @@ public class Cache<T extends Cacheable> {
         return returned;
     }
 
+    /**
+     * Updates variables tracking number of cached items.
+     */
+    private void updateSize(Boolean adding) {
+        this.currentlyCached = this.cache.size();
+        if(this.currentlyCached > this.maxCached) {
+            this.maxCached = this.currentlyCached;
+        }
+    }
+
+    /**
+     * @return The maximum number of items that have been cached at any time.
+     */
+    public int getMaxCached() {
+        return maxCached;
+    }
 }

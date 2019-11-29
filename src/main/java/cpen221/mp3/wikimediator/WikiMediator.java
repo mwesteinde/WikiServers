@@ -1,7 +1,6 @@
 package cpen221.mp3.wikimediator;
 
 import cpen221.mp3.cache.Cache;
-import cpen221.mp3.cache.Cacheable;
 import fastily.jwiki.core.Wiki;
 
 import java.time.Instant;
@@ -11,9 +10,8 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+public class WikiMediator {
 
-//TODO: should T extends cacheable be used?d
-public class WikiMediator<T extends Cacheable> {
     // TODO: write RI and AF
     // AF: explains the variables in their abstract context assuming RI is met
     // RI: covers entire domain that variables could be in and makes sure they can only take values that make sense
@@ -24,13 +22,12 @@ public class WikiMediator<T extends Cacheable> {
     /* access to wikipedia */
     private Wiki wiki = new Wiki("en.wikipedia.org");
 
-    /* a set of all queries from simpleSearch and getPage and how many times they have occurred */
+    /* variables to keep track of queries */
     private TreeSet<Query> qTree = new TreeSet<>();
-
-    /* keeps track of the Strings queried */
-    private ArrayList<Query> qList = new ArrayList<>();
-
     private HashMap<String, Query> qMap = new HashMap<>();
+
+    /* Tracks calls to methods in 30 second intervals */
+    private Cache<MethodCall> callCache = new Cache(300, 30);
 
     /* TODO: Implement this datatype
         You must implement the methods with the exact signatures
@@ -43,6 +40,16 @@ public class WikiMediator<T extends Cacheable> {
      */
 
     /**
+     * Creates a WikiMediator.
+     */
+    public WikiMediator() {
+    }
+
+    /* //////////////////////////////////////////////////////////////////////////////// */
+    /* /////////////////////////// BASIC REQUESTS ///////////////////////////////////// */
+    /* //////////////////////////////////////////////////////////////////////////////// */
+
+    /**
      * Given a `query`, return up to
      * `limit` page titles that match the query string (per Wikipedia's search service).
      *
@@ -50,8 +57,10 @@ public class WikiMediator<T extends Cacheable> {
      * @param limit The limit to the number of results retrieved.
      * @return A list of length limit of pages with the query in the title.
      */
-    public List<String> simpleSearch(String query, int limit) {
+    public List<String> simpleSearch(String query, int limit) throws Exception {
+        call();
         queried(query);
+
         //TODO: use cache
 
         ArrayList<String> results = wiki.search(query, limit);
@@ -66,9 +75,10 @@ public class WikiMediator<T extends Cacheable> {
      * @return The text associated with pageTitle as a String if the page exists, an empty String otherwise.
      */
     public String getPage(String pageTitle) {
+        call();
         queried(pageTitle);
-        //TODO: use cache
 
+        //TODO: use cache
 
         return wiki.getPageText(pageTitle);
     }
@@ -83,6 +93,7 @@ public class WikiMediator<T extends Cacheable> {
      * @return A a list of page titles within 'hops' of the page pageTitle.
      */
     public List<String> getConnectedPages(String pageTitle, int hops) {
+        call();
 
         List<String> hoppable;
 
@@ -109,13 +120,16 @@ public class WikiMediator<T extends Cacheable> {
      * @return The most common 'String's searched for with simpleSearch and getPage.
      */
     public List<String> zeitgeist(int limit) {
+        call();
+
         //TODO: use cache
         List<String> mostCommonQueries = new ArrayList<>();
 
-        for(Query q: this.qTree.descendingSet()) {
+        for (Query q : this.qTree.descendingSet()) {
             if (mostCommonQueries.size() < limit) {
                 mostCommonQueries.add(q.getQuery());
-            } if (mostCommonQueries.size() == limit) {
+            }
+            if (mostCommonQueries.size() == limit) {
                 return mostCommonQueries;
             }
         }
@@ -130,36 +144,25 @@ public class WikiMediator<T extends Cacheable> {
      * @return The most commonly queried Strings within the last 30 seconds.
      */
     public List<String> trending(int limit) {
+        call();
+
         //TODO: use cache
         // could work?
         TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
         Instant now = Instant.now();
+
+        // filters queries within last 30 seconds and gets their string values
         List<String> sortedQueries = qTree.descendingSet().stream()
                 .filter(q -> q.within30S(now))
                 .map(Query::getQuery)
                 .collect(Collectors.toList());
+
+        // returns <= the limit of queries allowed
         if (sortedQueries.size() <= limit) {
             return sortedQueries;
         } else {
-            return sortedQueries.subList(0, limit-1);
+            return sortedQueries.subList(0, limit - 1);
         }
-//
-//        List<String> latestQueries = new ArrayList<String>();
-//
-//
-//        for (Query q : this.queries.descendingSet()) {
-//            // adds query if the query was created within the last 30 seconds
-//            if (q.timestamp.isAfter(Instant.now().minus(30, ChronoUnit.SECONDS))) {
-//                latestQueries.add(q.query);
-//            }
-//            // returns the latest queries if the limit is reached
-//            if (latestQueries.size() == limit) {
-//                return latestQueries;
-//            }
-//        }
-//
-//        return latestQueries;
-//        return null;
     }
 
     /**
@@ -167,12 +170,16 @@ public class WikiMediator<T extends Cacheable> {
      * request count is to include all requests made using the public API of `WikiMediator`, and
      * therefore counts all 6 methods listed as **basic page requests**.
      *
-     * @return
+     * @return The maximum number of method calls within 30 seconds.
      */
     public int peakLoad30s() {
-
-        return -1;
+        call();
+        return callCache.getMaxCached();
     }
+
+    /* //////////////////////////////////////////////////////////////////////////////// */
+    /* /////////////////////////// HELPER METHODS ///////////////////////////////////// */
+    /* //////////////////////////////////////////////////////////////////////////////// */
 
     /**
      * Updates the list of queries with a query.
@@ -185,6 +192,17 @@ public class WikiMediator<T extends Cacheable> {
             qToUpdate.update(query);
         } else {
             qMap.put(query, new Query(query));
+        }
+    }
+
+    /**
+     * @modifies callCache by adding a method call.
+     */
+    private void call() {
+        try {
+            callCache.put(new MethodCall());
+        } catch (Exception e) {
+            System.out.println("Exception thrown when using callCache.put()");
         }
     }
 }

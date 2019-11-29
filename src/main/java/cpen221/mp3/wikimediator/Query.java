@@ -1,7 +1,10 @@
 package cpen221.mp3.wikimediator;
 
+import cpen221.mp3.cache.Cacheable;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAmount;
 
 public class Query implements Comparable {
         /*
@@ -11,7 +14,7 @@ public class Query implements Comparable {
 
         Representation Invariant:
             num > 1
-            timestamp != null
+            timestamp != null and is not after Instant.now()
             query is not an empty string
         */
 
@@ -69,7 +72,7 @@ public class Query implements Comparable {
      */
     @Override
     public boolean equals(Object o) {
-        if(!(o instanceof Query)) {
+        if (!(o instanceof Query)) {
             return false;
         }
         Query object = (Query) o;
@@ -100,5 +103,14 @@ public class Query implements Comparable {
      */
     public int getNumQueries() {
         return this.numQueries;
+    }
+
+    /**
+     * A method used to test peakload30s
+     *
+     * @param time amount of time to subtract in seconds. Must be positive.
+     */
+    protected void mutateTime(int time) {
+        this.timestamp.minusSeconds(time);
     }
 }

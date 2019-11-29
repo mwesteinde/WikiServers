@@ -7,7 +7,7 @@ public class WikiMediatorServer {
      * up to n requests concurrently.
      *
      * @param port the port number to bind the server to
-     * @param n the number of concurrent requests the server can handle
+     * @param n    the number of concurrent requests the server can handle
      */
     public WikiMediatorServer(int port, int n) {
 
