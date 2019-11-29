@@ -82,7 +82,7 @@ public class Cache<T extends Cacheable> {
             }
             cache.put(t, time);
         }
-
+        updateSize();
         return full;
     }
 
@@ -96,6 +96,7 @@ public class Cache<T extends Cacheable> {
             long duration = time - (int) i.getValue();
             if (duration > this.timeout) {
                 cache.remove(i);
+                updateSize();
             }
             if (duration >= longest) {
                 last = i;
@@ -179,9 +180,9 @@ public class Cache<T extends Cacheable> {
     }
 
     /**
-     * Updates variables tracking number of cached items.
+     * Updates the variables tracking number of cached items.
      */
-    private void updateSize(Boolean adding) {
+    private void updateSize() {
         this.currentlyCached = this.cache.size();
         if(this.currentlyCached > this.maxCached) {
             this.maxCached = this.currentlyCached;
