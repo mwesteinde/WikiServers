@@ -40,7 +40,7 @@ public class WikiMediator {
      */
 
     /**
-     * Creates a WikiMediator.
+     * Creates a new WikiMediator object.
      */
     public WikiMediator() {
     }
@@ -54,17 +54,15 @@ public class WikiMediator {
      * `limit` page titles that match the query string (per Wikipedia's search service).
      *
      * @param query The string to search Wikipedia titles with.
-     * @param limit The limit to the number of results retrieved.
+     * @param limit The limit to the number of results retrieved, > 0;
      * @return A list of length limit of pages with the query in the title.
      */
-    public List<String> simpleSearch(String query, int limit) throws Exception {
+    public List<String> simpleSearch(String query, int limit) {
         call();
         queried(query);
-
         //TODO: use cache
 
-        ArrayList<String> results = wiki.search(query, limit);
-        return results.subList(0, limit);
+        return wiki.search(query, limit);
     }
 
     /**

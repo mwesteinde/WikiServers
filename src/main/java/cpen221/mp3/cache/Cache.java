@@ -26,7 +26,7 @@ public class Cache<T extends Cacheable> {
 
     //TODO:
     // AF:
-    // RI:
+    // RI: maxCached >= currentlyCached >= 0
 
     private Map<T, Long> cache = new HashMap<>();
 
@@ -68,20 +68,25 @@ public class Cache<T extends Cacheable> {
 
         time = java.lang.System.currentTimeMillis() / 1000;
 
+        //TODO: what is this doing?
         Object last = expiry();
-        if (last == null) {
-            throw new Exception("last==null");
+        if (cache.size() == 0) {
+            cache.put(t, time);
+        } else {
+            if (last == null) {
+                throw new Exception("last==null");
+            }
+            if (cache.containsKey(t)) {
+                cache.replace(t, cache.get(t), time);
+            } else {
+                if (cache.size() == this.capacity) {
+                    full = true;
+                    cache.remove(last);
+                }
+                cache.put(t, time);
+            }
         }
 
-        if (cache.containsKey(t)) {
-            cache.replace(t, cache.get(t), time);
-        } else {
-            if (cache.size() == this.capacity) {
-                full = true;
-                cache.remove(last);
-            }
-            cache.put(t, time);
-        }
         updateSize();
         return full;
     }
@@ -184,7 +189,7 @@ public class Cache<T extends Cacheable> {
      */
     private void updateSize() {
         this.currentlyCached = this.cache.size();
-        if(this.currentlyCached > this.maxCached) {
+        if (this.currentlyCached > this.maxCached) {
             this.maxCached = this.currentlyCached;
         }
     }
