@@ -24,22 +24,23 @@ public class Cache<T extends Cacheable> {
 
     private int currentlyCached;
 
+    //AF: A cache is represented by a map with a stored object as keys and their time of placement in the map as values.
+    //RI: 0 <= The number of objects in the cache <= capacity.
+    //maxCached >= currentlyCached >= 0.
+    //The cache must not contain any objects that have been there longer than the timeout value.
+
     //TODO:
-    // AF:
-    // RI: maxCached >= currentlyCached >= 0
+    // Thread safety argument:
 
     private Map<T, Long> cache = new HashMap<>();
-
-    /* TODO: Implement this datatype */
 
     /**
      * Create a cache with a fixed capacity and a timeout value.
      * Objects in the cache that have not been refreshed within the timeout period
      * are removed from the cache.
      *
-     * @param capacity the number of objects the cache can hold. Must be less than or equal to 256.
-     * @param timeout  the duration, in seconds, an object should be in the cache before it times out. Must be less than
-     *                 or equal to
+     * @param capacity the number of objects the cache can hold.
+     * @param timeout  the duration, in seconds, an object should be in the cache before it times out.
      */
     public Cache(int capacity, int timeout) {
         this.capacity = capacity;
@@ -60,7 +61,7 @@ public class Cache<T extends Cacheable> {
      *
      * @param t the value to add to the cache
      * @return true if an object was removed and false if not.
-     * @throws
+     * @throws Exception if last was not updated.
      */
     public boolean put(T t) throws Exception {
         long time;
@@ -91,12 +92,6 @@ public class Cache<T extends Cacheable> {
     }
 
     // Checks for objects that have been in cache for longer than timeout
-
-    /**
-     *
-     *
-     * @return
-     */
     private Object expiry() {
         Object last = null;
         long time = java.lang.System.currentTimeMillis() / 1000;
@@ -118,6 +113,7 @@ public class Cache<T extends Cacheable> {
     /**
      * @param id the identifier of the object to be retrieved
      * @return the object that matches the identifier from the cache
+     * @throws NotPresentException if the object is not in the cache
      */
     public T get(String id) throws NotPresentException {
         /* Do not return null. Throw a suitable checked exception when an object
@@ -144,7 +140,7 @@ public class Cache<T extends Cacheable> {
      * is delayed.
      *
      * @param id the identifier of the object to "touch"
-     * @return true if successful and false otherwise
+     * @return true if successful and false otherwise. True if the object is in the cache.
      */
     public boolean touch(String id) {
         T now;
@@ -168,7 +164,7 @@ public class Cache<T extends Cacheable> {
      * object in the cache.
      *
      * @param t the object to update
-     * @return true if successful and false otherwise
+     * @return true if successful and false otherwise. True if the object is in the cache.
      */
     public boolean update(T t) {
         boolean returned = false;
@@ -199,7 +195,8 @@ public class Cache<T extends Cacheable> {
     }
 
     /**
-     * @return The maximum number of items that have been cached at any time.
+     * Gets the maximum number of objects that have been cached since creation of this cache
+     * @return maxCached, The maximum number of items that have been cached at any time.
      */
     public int getMaxCached() {
         return maxCached;
