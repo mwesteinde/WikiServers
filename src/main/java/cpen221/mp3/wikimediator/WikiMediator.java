@@ -10,16 +10,27 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-public class WikiMediator {
+/**
+ * A public API which acts as a mediator for Wikipedia that allows interaction with the
+ * site's content and gathers information usage of this mediator.
+ */
+
+public class WikiMediator<InvalidQueryException extends Throwable> {
 
     // TODO: write RI and AF
     // AF: explains the variables in their abstract context assuming RI is met
     // RI: covers entire domain that variables could be in and makes sure they can only take values that make sense
 
-    // AF: An API that gets and stores Wikipedia pages in response to searches.
+    // AF: An API that returns and stores Wikipedia page information
+    // in response to queries.
+    // wikiCache stores search results
+    // wiki creates a new access to Wikipedia
+    // qTree stores past queries from simpleSearch and getPage in order of popularity
+    // qMap represents all past queries
+
     // RI:
     // qTree.size() == qMap.size()
-
+    // callCache
 
     /* a cache to store search results */
     private Cache wikiCache = new Cache();
@@ -32,7 +43,7 @@ public class WikiMediator {
     private HashMap<String, Query> qMap = new HashMap<>();
 
     /* Tracks calls to methods in 30 second intervals */
-    private Cache<MethodCall> callCache = new Cache(300, 30);
+    private Cache callCache = new Cache(300, 30);
 
     /* TODO: Implement this datatype
         You must implement the methods with the exact signatures
@@ -55,48 +66,72 @@ public class WikiMediator {
     /* //////////////////////////////////////////////////////////////////////////////// */
 
     /**
-     * Given a `query`, return up to
-     * `limit` page titles that match the query string (per Wikipedia's search service).
+     * Given a query, returns up to a specified number of page titles that match the query
+     * string (per Wikipedia's search service).
      *
      * @param query The string to search Wikipedia titles with.
      * @param limit The limit to the number of results retrieved, > 0;
-     * @return A list of length limit of pages with the query in the title.
+     * @return A list of length limit of pages with the query in the title, an empty list
+     * if an empty string is searched.
      */
     public List<String> simpleSearch(String query, int limit) {
         call("search");
-        queried(query);
-        //TODO: use cache
+        try {
+            if (query.equals("")) {
+                throw new NullPointerException();
+            }
 
-        return wiki.search(query, limit);
+            queried(query);
+            //TODO: use cache
+
+            return wiki.search(query, limit);
+
+        } catch (NullPointerException e) {
+            System.out.println("Empty string searched");
+        }
+
+        return new ArrayList<>();
     }
 
     /**
-     * Given a `pageTitle`, return the text associated
-     * with the Wikipedia page that matches `pageTitle`.
+     * Given a Wikipedia page, gets the text associated
+     * with the Wikipedia page that matches the query.
      *
-     * @param pageTitle The String title of a Wikipedia page.
-     * @return The text associated with pageTitle as a String if the page exists, an empty String otherwise.
+     * @param pageTitle The  title of a Wikipedia page.
+     * @return The text associated with pageTitle as a String if the page exists,
+     * returns an empty string otherwise.
      */
     public String getPage(String pageTitle) {
+        //TODO: use cache
         call("search");
         queried(pageTitle);
 
-        //TODO: use cache
-
-        return wiki.getPageText(pageTitle);
+        try {
+            if (!wiki.exists(pageTitle)) {
+                throw new Exception();
+            }
+            return wiki.getPageText(pageTitle);
+        } catch (Exception e) {
+            System.out.println("Page does not exist.");
+            return "";
+        }
     }
 
     /**
-     * Return a list of page
-     * titles that can be reached by following up to `hops` links starting with the page
-     * specified by `pageTitle`.
+     * Gets a list of all Wikipedia page titles that can be reached by following a
+     * specified number of links starting with a specific page.
      *
      * @param pageTitle The title of the page to start hopping from.
      * @param hops      The number of 'hops' to take from pageTitle, must be >= 0.
-     * @return A a list of page titles within 'hops' of the page pageTitle.
+     * @return A a list of page titles within 'hops' of the page pageTitle,
+     * an empty list if the page does not exist.
      */
     public List<String> getConnectedPages(String pageTitle, int hops) {
         call("basicRequest");
+
+        if (!wiki.exists(pageTitle)) {
+            return new ArrayList<>();
+        }
 
         List<String> hoppable = new ArrayList<>();
         hoppable.add(pageTitle);
@@ -124,12 +159,14 @@ public class WikiMediator {
     }
 
     /**
-     * Return the most common `String`s used in `simpleSearch`
-     * and `getPage` requests, with items being sorted in non-increasing count order. When many requests
-     * have been made, return only `limit` items.
+     * Gets the most common queries used for 'simpleSearch'
+     * and `getPage` method calls on this WikiMediator, with items being sorted in
+     * non-increasing count order.
+     * When many requests have been made, returns only the specified number of titles.
      *
-     * @param limit A limit for how many pages can be returned, > 0.
-     * @return The most common 'String's searched for with simpleSearch and getPage.
+     * @param limit A limit for how many pages can be returned, cannot be negative.
+     * @return The most common queries used with simpleSearch and getPage methods on this
+     * WikiMediator.
      */
     public List<String> zeitgeist(int limit) {
         call("basicRequest");
@@ -148,17 +185,23 @@ public class WikiMediator {
     }
 
     /**
-     * Similar to `zeitgeist()`, but returns the most frequent
-     * requests made in the last 30 seconds.
+     * Returns the most common queries used for 'simpleSearch'
+     * and `getPage` requests with this WikiMediator within the last 30 seconds, with
+     * items being sorted in non-increasing query count order.
+     * When many requests have been made, returns only the specified number of titles.
      *
-     * @param limit A limit for how many pages can be returned.
-     * @return The most commonly queried Strings using `simpleSearch`
-     * and `getPage`with the last 30 seconds.
+     * @param limit A limit for how many pages can be returned, cannot be negative.
+     * @return The 'limit' most common queries using `simpleSearch`
+     * and `getPage` within the last 30 seconds.
      */
     public List<String> trending(int limit) {
         call("basicRequest");
-
         //TODO: use cache
+
+        if (limit == 0) {
+            return new ArrayList<>();
+        }
+
         // could work?
         TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
         Instant now = Instant.now();
@@ -178,14 +221,15 @@ public class WikiMediator {
     }
 
     /**
-     * What is the maximum number of requests seen in any 30-second window? The
-     * request count is to include all requests made using the public API of `WikiMediator`, and
-     * therefore counts all 6 methods listed as **basic page requests**.
+     * Gets the maximum load this WikiMediator has handled within a 30 second timeframe since
+     * its creation.
      *
-     * @return The maximum number of method calls within 30 seconds.
+     * @return The maximum number of method calls within 30 seconds over the lifespan of
+     * this WikiMediator.
      */
     public int peakLoad30s() {
         call("basicRequest");
+
         return callCache.getMaxCached();
     }
 
@@ -194,9 +238,10 @@ public class WikiMediator {
     /* //////////////////////////////////////////////////////////////////////////////// */
 
     /**
-     * Updates the list of queries with a query.
+     * Updates the list of queries with a new query that has been input into a method
+     * of this instance of WikiMedia.
      *
-     * @param query The string queried.
+     * @param query The query input to a method in this WikiMediator.
      */
     private void queried(String query) {
         if (qMap.containsKey(query)) {
@@ -208,8 +253,9 @@ public class WikiMediator {
     }
 
     /**
-     * @param callType is the type of method that has been called.
-     * @modifies callCache by adding a method call.
+     * Modifies callCache by adding a method called on this instance of WikiMediator.
+     *
+     * @param callType The type of method that has been called.
      */
     private void call(String callType) {
         try {
@@ -217,5 +263,34 @@ public class WikiMediator {
         } catch (Exception e) {
             System.out.println("Exception thrown when using callCache.put()");
         }
+    }
+
+    // 3A
+    /**
+     * Gets a path of links from one specified Wikipedia page to another. If the page does
+     * not exist or the pages cannot be linked an empty list is returned.
+     *
+     * @param startPage A potential Wikipedia page name.
+     * @param stopPage A potential Wikipedia page name.
+     * @return A list of pages that are on the link path between startPage and stopPage,
+     * returns an empty list if one of the pages does not exist or the pages cannot be linked.
+     */
+    public List<String> getPath(String startPage, String stopPage) {
+
+        return null;
+    }
+
+    // 3B
+    /**
+     * Gets a list results from a specified query.
+     *
+     * @param query A specified query.
+     * @return A list of results that correspond with the specified query. An empty list
+     * if no meaningful results are found. Leads to a failed operation when used over
+     * the network.
+     * @throws InvalidQueryException if the input query cannot be parsed.
+     */
+    public List<String> executeQuery(String query) throws InvalidQueryException {
+        return null;
     }
 }

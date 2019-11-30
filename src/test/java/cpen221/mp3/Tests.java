@@ -127,4 +127,19 @@ public class Tests {
         Assert.assertEquals(expected, wikiM.trending(3));
     }
 
+    @Test
+    public void simpleSearchTest2() {
+        WikiMediator wikiM = new WikiMediator();
+
+        Wiki wiki = new Wiki("en.wikipedia.org");
+
+        List<String> nothing = wikiM.simpleSearch("", 1);
+
+        Assert.assertTrue(nothing.isEmpty());
+
+        System.out.print(wiki.search("dark side of the blue sun", 2).toString() + "\n ");
+
+    }
+
+
 }
