@@ -29,8 +29,10 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     // qMap represents all past queries
 
     // RI:
-    // qTree.size() == qMap.size()
-    // callCache
+    // qTree.size() == qMap.size() >= 0
+    // wikiCache size >= 0
+    // Wiki has domain en.wikipedia.org
+    //
 
     /* a cache to store search results */
     private Cache wikiCache = new Cache();
@@ -97,7 +99,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * Given a Wikipedia page, gets the text associated
      * with the Wikipedia page that matches the query.
      *
-     * @param pageTitle The  title of a Wikipedia page.
+     * @param pageTitle The title of a Wikipedia page.
      * @return The text associated with pageTitle as a String if the page exists,
      * returns an empty string otherwise.
      */
