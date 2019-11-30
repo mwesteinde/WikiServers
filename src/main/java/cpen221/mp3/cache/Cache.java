@@ -98,7 +98,7 @@ public class Cache<T extends Cacheable> {
         long longest = 0;
 
         for (Map.Entry i : cache.entrySet()) {
-            long duration = time - (int) i.getValue();
+            long duration = time - (long) i.getValue();
             if (duration > this.timeout) {
                 cache.remove(i);
                 updateSize();
