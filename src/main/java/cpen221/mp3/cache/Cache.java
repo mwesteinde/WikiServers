@@ -74,7 +74,7 @@ public class Cache<T extends Cacheable> {
             cache.put(t, time);
         } else {
             if (last == null) {
-                throw new Exception("last==null");
+                throw new Exception("last == null");
             }
             if (cache.containsKey(t)) {
                 cache.replace(t, cache.get(t), time);
@@ -91,6 +91,12 @@ public class Cache<T extends Cacheable> {
     }
 
     // Checks for objects that have been in cache for longer than timeout
+
+    /**
+     *
+     *
+     * @return
+     */
     private Object expiry() {
         Object last = null;
         long time = java.lang.System.currentTimeMillis() / 1000;
@@ -106,7 +112,6 @@ public class Cache<T extends Cacheable> {
                 last = i;
             }
         }
-
         return last;
     }
 

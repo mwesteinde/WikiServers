@@ -16,6 +16,11 @@ public class WikiMediator {
     // AF: explains the variables in their abstract context assuming RI is met
     // RI: covers entire domain that variables could be in and makes sure they can only take values that make sense
 
+    // AF: An API that gets and stores Wikipedia pages in response to searches.
+    // RI:
+    // qTree.size() == qMap.size()
+
+
     /* a cache to store search results */
     private Cache wikiCache = new Cache();
 
@@ -58,7 +63,7 @@ public class WikiMediator {
      * @return A list of length limit of pages with the query in the title.
      */
     public List<String> simpleSearch(String query, int limit) {
-        call();
+        call("search");
         queried(query);
         //TODO: use cache
 
@@ -73,7 +78,7 @@ public class WikiMediator {
      * @return The text associated with pageTitle as a String if the page exists, an empty String otherwise.
      */
     public String getPage(String pageTitle) {
-        call();
+        call("search");
         queried(pageTitle);
 
         //TODO: use cache
@@ -87,11 +92,11 @@ public class WikiMediator {
      * specified by `pageTitle`.
      *
      * @param pageTitle The title of the page to start hopping from.
-     * @param hops      The number of 'hops' to take from pageTitle, must be >0.
+     * @param hops      The number of 'hops' to take from pageTitle, must be >= 0.
      * @return A a list of page titles within 'hops' of the page pageTitle.
      */
     public List<String> getConnectedPages(String pageTitle, int hops) {
-        call();
+        call("basicRequest");
 
         List<String> hoppable = new ArrayList<>();
         hoppable.add(pageTitle);
@@ -123,12 +128,11 @@ public class WikiMediator {
      * and `getPage` requests, with items being sorted in non-increasing count order. When many requests
      * have been made, return only `limit` items.
      *
-     * @param limit A limit for how many pages can be returned.
+     * @param limit A limit for how many pages can be returned, > 0.
      * @return The most common 'String's searched for with simpleSearch and getPage.
      */
     public List<String> zeitgeist(int limit) {
-        call();
-
+        call("basicRequest");
         //TODO: use cache
         List<String> mostCommonQueries = new ArrayList<>();
 
@@ -148,10 +152,11 @@ public class WikiMediator {
      * requests made in the last 30 seconds.
      *
      * @param limit A limit for how many pages can be returned.
-     * @return The most commonly queried Strings within the last 30 seconds.
+     * @return The most commonly queried Strings using `simpleSearch`
+     * and `getPage`with the last 30 seconds.
      */
     public List<String> trending(int limit) {
-        call();
+        call("basicRequest");
 
         //TODO: use cache
         // could work?
@@ -180,7 +185,7 @@ public class WikiMediator {
      * @return The maximum number of method calls within 30 seconds.
      */
     public int peakLoad30s() {
-        call();
+        call("basicRequest");
         return callCache.getMaxCached();
     }
 
@@ -203,11 +208,12 @@ public class WikiMediator {
     }
 
     /**
+     * @param callType is the type of method that has been called.
      * @modifies callCache by adding a method call.
      */
-    private void call() {
+    private void call(String callType) {
         try {
-            callCache.put(new MethodCall());
+            callCache.put(new MethodCall(callType));
         } catch (Exception e) {
             System.out.println("Exception thrown when using callCache.put()");
         }

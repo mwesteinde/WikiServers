@@ -2,6 +2,9 @@ package cpen221.mp3.server;
 
 public class WikiMediatorServer {
 
+    //RI: Each JSON object has a type and id
+    //AF:
+
     /**
      * Start a server at a given port number, with the ability to process
      * up to n requests concurrently.
