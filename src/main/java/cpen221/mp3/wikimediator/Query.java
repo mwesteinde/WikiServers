@@ -1,16 +1,21 @@
 package cpen221.mp3.wikimediator;
 
-import cpen221.mp3.cache.Cacheable;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAmount;
+
+/**
+ * A query
+ */
 
 public class Query implements Comparable {
         /*
        Abstraction Function:
             A class to store queries as well as the latest time they were searched for on Wikipedia,
-            the number of times they were searched,.
+            the number of times they were searched.
+            query is the String searched
+            timestamp is the last time it was queried
+            numQueries is the number of times this query was searched
+
 
         Representation Invariant:
             num > 1

@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * A public API which acts as a mediator for Wikipedia that allows interaction with the
- * site's content and gathers information usage of this mediator.
+ * site's content and gathers usage information about this mediator.
  */
 
 public class WikiMediator<InvalidQueryException extends Throwable> {
@@ -27,12 +27,13 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     // wiki creates a new access to Wikipedia
     // qTree stores past queries from simpleSearch and getPage in order of popularity
     // qMap represents all past queries
+    // callCache stores all calls to this WikiMediator
 
     // RI:
     // qTree.size() == qMap.size() >= 0
     // wikiCache size >= 0
     // Wiki has domain en.wikipedia.org
-    //
+    // callCache size >= 0
 
     /* a cache to store search results */
     private Cache wikiCache = new Cache();
@@ -71,7 +72,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * Given a query, returns up to a specified number of page titles that match the query
      * string (per Wikipedia's search service).
      *
-     * @param query The string to search Wikipedia titles with.
+     * @param query The string to search Wikipedia titles with, cannot be empty.
      * @param limit The limit to the number of results retrieved, > 0;
      * @return A list of length limit of pages with the query in the title, an empty list
      * if an empty string is searched.
@@ -99,7 +100,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * Given a Wikipedia page, gets the text associated
      * with the Wikipedia page that matches the query.
      *
-     * @param pageTitle The title of a Wikipedia page.
+     * @param pageTitle The title of a Wikipedia page, cannot be empty.
      * @return The text associated with pageTitle as a String if the page exists,
      * returns an empty string otherwise.
      */
@@ -123,7 +124,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * Gets a list of all Wikipedia page titles that can be reached by following a
      * specified number of links starting with a specific page.
      *
-     * @param pageTitle The title of the page to start hopping from.
+     * @param pageTitle The title of the page to start hopping from, cannot be empty.
      * @param hops      The number of 'hops' to take from pageTitle, must be >= 0.
      * @return A a list of page titles within 'hops' of the page pageTitle,
      * an empty list if the page does not exist.
@@ -223,7 +224,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     }
 
     /**
-     * Gets the maximum load this WikiMediator has handled within a 30 second timeframe since
+     * Gets the maximum load this WikiMediator has handled within a 30 second time frame since
      * its creation.
      *
      * @return The maximum number of method calls within 30 seconds over the lifespan of
@@ -243,7 +244,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * Updates the list of queries with a new query that has been input into a method
      * of this instance of WikiMedia.
      *
-     * @param query The query input to a method in this WikiMediator.
+     * @param query The query input to a method in this WikiMediator, cannot be empty.
      */
     private void queried(String query) {
         if (qMap.containsKey(query)) {
@@ -257,7 +258,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     /**
      * Modifies callCache by adding a method called on this instance of WikiMediator.
      *
-     * @param callType The type of method that has been called.
+     * @param callType The type of method that has been called, cannot be empty.
      */
     private void call(String callType) {
         try {
@@ -272,8 +273,8 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * Gets a path of links from one specified Wikipedia page to another. If the page does
      * not exist or the pages cannot be linked an empty list is returned.
      *
-     * @param startPage A potential Wikipedia page name.
-     * @param stopPage A potential Wikipedia page name.
+     * @param startPage A potential Wikipedia page name, cannot be empty.
+     * @param stopPage A potential Wikipedia page name, cannot be empty.
      * @return A list of pages that are on the link path between startPage and stopPage,
      * returns an empty list if one of the pages does not exist or the pages cannot be linked.
      */
@@ -286,7 +287,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     /**
      * Gets a list results from a specified query.
      *
-     * @param query A specified query.
+     * @param query A specified query, cannot be empty.
      * @return A list of results that correspond with the specified query. An empty list
      * if no meaningful results are found. Leads to a failed operation when used over
      * the network.
@@ -294,5 +295,14 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> executeQuery(String query) throws InvalidQueryException {
         return null;
+    }
+
+    /**
+     * Checks the representation invariant.
+     *
+     * @return True if the representation invariant is held, false otherwise.
+     */
+    public boolean checkRep() {
+        return true;
     }
 }

@@ -4,6 +4,10 @@ import cpen221.mp3.cache.Cacheable;
 
 import java.time.Instant;
 
+/**
+ A simple class to track calls to methods in another class.
+ */
+
 public class MethodCall implements Cacheable {
     //RI: callTime is > 0, cannot be before Instant.now()
     //AF: Stores a method call as the time it is called with the name of the method that has been called.

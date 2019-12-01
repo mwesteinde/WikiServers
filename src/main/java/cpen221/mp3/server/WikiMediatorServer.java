@@ -1,5 +1,10 @@
 package cpen221.mp3.server;
 
+/**
+ * A server which allows a client to use WikiMediator and can handle a specified number of
+ * requests simultaneously.
+ */
+
 public class WikiMediatorServer {
 
     //RI: Each input JSON object has a type and an id. Each output JSON object has an id, status and response.
@@ -20,7 +25,7 @@ public class WikiMediatorServer {
      * up to n requests concurrently. Writes a JSON formatted string with an id, status success or fail and response.
      *
      * @param port the port number to bind the server to
-     * @param n    the number of concurrent requests the server can handle
+     * @param n    the number of concurrent requests the server can handle, cannot be negative.
      */
     public WikiMediatorServer(int port, int n) {
 

@@ -5,6 +5,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Cache represents a generic cache for up to a certain number of Objects
+ * that stores them for a certain amount of time.
+ */
+
 public class Cache<T extends Cacheable> {
 
     /* the default cache size is 32 objects */
@@ -24,10 +29,11 @@ public class Cache<T extends Cacheable> {
 
     private int currentlyCached;
 
-    //AF: A cache is represented by a map with a stored object as keys and their time of placement in the map as values.
-    //RI: 0 <= The number of objects in the cache <= capacity.
-    //maxCached >= currentlyCached >= 0.
-    //The cache must not contain any objects that have been there longer than the timeout value.
+    // AF: A cache is represented by a map with a stored object as keys and their time of placement in the map as values.
+    // RI: 0 <= The number of objects in the cache <= capacity.
+    // capacity >= maxCached >= currentlyCached >= 0.
+    // timeout >= 0
+    // The cache must not contain any objects that have been there longer than the timeout value.
 
     //TODO:
     // Thread safety argument:
@@ -39,7 +45,7 @@ public class Cache<T extends Cacheable> {
      * Objects in the cache that have not been refreshed within the timeout period
      * are removed from the cache.
      *
-     * @param capacity the number of objects the cache can hold.
+     * @param capacity the number of objects the cache can hold, >= 0.
      * @param timeout  the duration, in seconds, an object should be in the cache before it times out.
      */
     public Cache(int capacity, int timeout) {
@@ -91,7 +97,13 @@ public class Cache<T extends Cacheable> {
         return full;
     }
 
-    // Checks for objects that have been in cache for longer than timeout
+
+
+    /**
+     * Removes stale objects and returns the oldest.
+     *
+     * @return The oldest object in this cache.
+     */
     private Object expiry() {
         Object last = null;
         long time = java.lang.System.currentTimeMillis() / 1000;
@@ -111,6 +123,8 @@ public class Cache<T extends Cacheable> {
     }
 
     /**
+     * Gets an object in this cache, if it exists.
+     *
      * @param id the identifier of the object to be retrieved
      * @return the object that matches the identifier from the cache
      * @throws NotPresentException if the object is not in the cache
@@ -135,7 +149,7 @@ public class Cache<T extends Cacheable> {
     }
 
     /**
-     * Update the last refresh time for the object with the provided id.
+     * Updates the last refresh time for the object with the provided id.
      * This method is used to mark an object as "not stale" so that its timeout
      * is delayed.
      *
@@ -185,7 +199,7 @@ public class Cache<T extends Cacheable> {
     }
 
     /**
-     * Updates the variables tracking number of cached items.
+     * Synchronizes the size variables with present the cache size.
      */
     private void updateSize() {
         this.currentlyCached = this.cache.size();
@@ -195,10 +209,12 @@ public class Cache<T extends Cacheable> {
     }
 
     /**
-     * Gets the maximum number of objects that have been cached since creation of this cache
+     * Gets the maximum number of objects that have been cached since creation of this cache.
+     *
      * @return maxCached, The maximum number of items that have been cached at any time.
      */
     public int getMaxCached() {
         return maxCached;
     }
+
 }
