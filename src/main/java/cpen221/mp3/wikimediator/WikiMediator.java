@@ -21,17 +21,6 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     // AF: explains the variables in their abstract context assuming RI is met
     // RI: covers entire domain that variables could be in and makes sure they can only take values that make sense
 
-    // AF: An API that returns and stores Wikipedia page information
-    // in response to queries.
-    // wikiCache stores search results
-    // wiki creates a new access to Wikipedia
-    // qTree stores past queries from simpleSearch and getPage in order of popularity
-    // qMap represents all past queries
-
-    // RI:
-    // qTree.size() == qMap.size()
-    // callCache
-
     /* a cache to store search results */
     private Cache wikiCache = new Cache();
 
@@ -55,8 +44,19 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
         values like null.
      */
 
+    // AF: An API that returns and stores Wikipedia page information
+    //      in response to queries.
+    //      wikiCache stores search results
+    //      wiki creates a new access to Wikipedia
+    //      qTree stores past queries from simpleSearch and getPage in order of popularity
+    //      qMap represents all past queries
+
+    // RI:
+    //      qTree.size() == qMap.size()
+    //      callCache
+
     /**
-     * Creates a new WikiMediator object.
+     * Constructor, creates a new WikiMediator object.
      */
     public WikiMediator() {
     }
