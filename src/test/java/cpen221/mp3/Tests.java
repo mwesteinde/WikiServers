@@ -6,6 +6,7 @@ import fastily.jwiki.core.Wiki;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -67,7 +68,11 @@ public class Tests {
             wikiM.simpleSearch("zeitgeist", 3);
         }
 
-        Assert.assertTrue(wikiM.zeitgeist(1).equals(new ArrayList<>(Collections.singleton("zeitgeist"))));
+        ArrayList<String> expected = new ArrayList<>();
+        expected.add("zeitgeist");
+        List actual = wikiM.zeitgeist(1);
+
+        Assert.assertEquals(expected, actual);
 
     }
 
@@ -100,7 +105,7 @@ public class Tests {
     public void trendingTest2() throws InterruptedException {
         WikiMediator wikiM = new WikiMediator();
 
-        for (int i = 0 ; i < 4; i++) {
+        for (int i = 0 ; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
         }
 
@@ -108,7 +113,7 @@ public class Tests {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(12*1000);
+        Thread.sleep(5*1000);
 
         for (int i = 0 ; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
@@ -120,11 +125,12 @@ public class Tests {
 
         ArrayList<String> expected = new ArrayList<>();
         expected.add("UBC");
-        expected.add("zeitgeist");
+        expected.add("goodbye");
         expected.add("hi");
 
-        System.out.println(expected.toString() + "\n" + wikiM.trending(3).toString());
-        Assert.assertEquals(expected, wikiM.trending(3));
+        List trending = wikiM.trending(3);
+        System.out.println(expected.toString() + "\n" + trending.toString());
+        Assert.assertEquals(expected, trending);
     }
 
     @Test

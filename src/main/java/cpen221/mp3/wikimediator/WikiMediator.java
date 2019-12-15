@@ -3,11 +3,9 @@ package cpen221.mp3.wikimediator;
 import cpen221.mp3.cache.Cache;
 import fastily.jwiki.core.Wiki;
 
+import java.lang.reflect.Array;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -174,17 +172,20 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     public List<String> zeitgeist(int limit) {
         call("basicRequest");
         //TODO: use cache
-        List<String> mostCommonQueries = new ArrayList<>();
 
-        for (Query q : this.qTree.descendingSet()) {
-            if (mostCommonQueries.size() < limit) {
-                mostCommonQueries.add(q.getQuery());
-            }
-            if (mostCommonQueries.size() == limit) {
-                return mostCommonQueries;
-            }
+        TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
+
+        // filters queries within last 30 seconds and gets their string values
+        List<String> commonQueries = qTree.descendingSet().stream()
+                .sorted(Comparator.comparingInt(Query::getNumQueries).reversed())
+                .map(Query::getQuery)
+                .collect(Collectors.toList());
+
+        if(commonQueries.size() < limit) {
+            return commonQueries;
+        } else {
+            return commonQueries.subList(0, limit);
         }
-        return mostCommonQueries;
     }
 
     /**
@@ -219,7 +220,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
         if (sortedQueries.size() <= limit) {
             return sortedQueries;
         } else {
-            return sortedQueries.subList(0, limit - 1);
+            return sortedQueries.subList(0, limit);
         }
     }
 
