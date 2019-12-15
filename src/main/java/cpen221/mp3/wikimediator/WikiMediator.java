@@ -3,7 +3,6 @@ package cpen221.mp3.wikimediator;
 import cpen221.mp3.cache.Cache;
 import fastily.jwiki.core.Wiki;
 
-import java.lang.reflect.Array;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -267,6 +266,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
         } catch (Exception e) {
             System.out.println("Exception thrown when using callCache.put()");
         }
+        TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
     }
 
     // 3A
@@ -304,6 +304,6 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * @return True if the representation invariant is held, false otherwise.
      */
     public boolean checkRep() {
-        return true;
+        return qTree.size() == qMap.size();
     }
 }
