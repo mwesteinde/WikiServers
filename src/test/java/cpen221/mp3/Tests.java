@@ -1,14 +1,11 @@
 package cpen221.mp3;
 
-import cpen221.mp3.wikimediator.Query;
 import cpen221.mp3.wikimediator.WikiMediator;
 import fastily.jwiki.core.Wiki;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Tests {
