@@ -109,12 +109,12 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public String getPage(String pageTitle) {
         try {
+            call("search");
+            queried(pageTitle);
             StringCacheable o = (StringCacheable) thisCache.get(pageTitle);
             thisCache.touch(pageTitle);
             return o.text();
         } catch (NotPresentException e) {
-            call("search");
-            queried(pageTitle);
 
             try {
                 if (!wiki.exists(pageTitle)) {
