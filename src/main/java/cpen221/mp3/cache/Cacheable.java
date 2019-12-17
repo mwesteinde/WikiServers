@@ -6,5 +6,4 @@ public interface Cacheable {
      * @return an identifier that can uniquely identify an instance of Cacheable
      */
     String id();
-
 }

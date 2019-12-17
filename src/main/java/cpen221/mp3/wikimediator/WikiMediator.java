@@ -1,11 +1,17 @@
 package cpen221.mp3.wikimediator;
 
 import cpen221.mp3.cache.Cache;
+import cpen221.mp3.cache.Cacheable;
+import cpen221.mp3.cache.NotPresentException;
+import cpen221.mp3.cache.StringCacheable;
 import fastily.jwiki.core.Wiki;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+
+//TODO Mykal: Implement cache in wikimediator and write tests by December 17th, implement task 3, do lab 9 for jokes, more tests on cache to 95% coverage, Task 3 95% coverage
+//TODO Bridget: Implement task 2, more tests on wikimediator to 95% coverage. Task 2 95% coverage tests
 
 /**
  * A public API which acts as a mediator for Wikipedia that allows interaction with the
@@ -14,7 +20,6 @@ import java.util.stream.Collectors;
 
 public class WikiMediator<InvalidQueryException extends Throwable> {
 
-    // TODO: write RI and AF
     // AF: explains the variables in their abstract context assuming RI is met
     // RI: covers entire domain that variables could be in and makes sure they can only take values that make sense
 
@@ -44,6 +49,9 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
 
     /* Tracks calls to methods in 30 second intervals */
     private Cache callCache = new Cache(300, 30);
+
+    private Cache thisCache = new Cache(256, 12*60*60);
+
 
     /* TODO: Implement this datatype
         You must implement the methods with the exact signatures
@@ -82,8 +90,6 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
             }
 
             queried(query);
-            //TODO: use cache
-
             return wiki.search(query, limit);
 
         } catch (NullPointerException e) {
@@ -102,18 +108,26 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * returns an empty string otherwise.
      */
     public String getPage(String pageTitle) {
-        //TODO: use cache
-        call("search");
-        queried(pageTitle);
-
         try {
-            if (!wiki.exists(pageTitle)) {
-                throw new Exception();
+            StringCacheable o = (StringCacheable) thisCache.get(pageTitle);
+            thisCache.touch(pageTitle);
+            return o.text();
+        } catch (NotPresentException e) {
+            call("search");
+            queried(pageTitle);
+
+            try {
+                if (!wiki.exists(pageTitle)) {
+                    throw new Exception();
+                }
+                String str = wiki.getPageText(pageTitle);
+                StringCacheable cachedString = new StringCacheable(pageTitle, str);
+                thisCache.put(cachedString);
+                return str;
+            } catch (Exception e1) {
+                System.out.println("Page does not exist.");
+                return "";
             }
-            return wiki.getPageText(pageTitle);
-        } catch (Exception e) {
-            System.out.println("Page does not exist.");
-            return "";
         }
     }
 

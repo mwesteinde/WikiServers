@@ -49,6 +49,7 @@ public class Tests {
         Wiki wiki = new Wiki("en.wikipedia.org");
 
         String sM = wikiM.getPage("UBC");
+        String sT = wikiM.getPage("UBC");
         String s = wiki.getPageText("UBC");
 
         Assert.assertEquals(sM, s);

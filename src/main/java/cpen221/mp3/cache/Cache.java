@@ -130,8 +130,6 @@ public class Cache<T extends Cacheable> {
      * @throws NotPresentException if the object is not in the cache
      */
     public T get(String id) throws NotPresentException {
-        /* Do not return null. Throw a suitable checked exception when an object
-            is not in the cache. */
         T returned = null;
 
         Object o = expiry();

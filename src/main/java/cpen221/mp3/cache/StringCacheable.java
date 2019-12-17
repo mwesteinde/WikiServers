@@ -5,13 +5,15 @@ public class StringCacheable implements Cacheable {
     //AF: String represents a cached object
 
     private String id;
+    private String text;
 
     /**
      * Associates an id value to a cache object
      * @param str a unique identifier for an object
      */
-    public StringCacheable(String str) {
+    public StringCacheable(String str, String text) {
         this.id = str;
+        this.text = text;
     }
 
     /**
@@ -19,6 +21,7 @@ public class StringCacheable implements Cacheable {
      */
     @Override
     public String id() {
-        return this.id();
+        return this.id;
     }
+    public String text() {return this.text; }
 }
