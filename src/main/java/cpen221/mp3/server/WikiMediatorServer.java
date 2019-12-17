@@ -1,6 +1,5 @@
 package cpen221.mp3.server;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -19,20 +18,16 @@ import java.util.List;
 
 public class WikiMediatorServer {
 
-    static final String FAILED_MESSAGE = "failed";
     static final String TIMEOUT_MESSAGE = "Operation timed out.";
-    static final String SUCCESS_MESSAGE = "success";
     static final Boolean FAILED = false;
     static final Boolean SUCCESS = true;
     static final String IP_ADDRESS = "197.35.26.96";
+
     private final WikiMediator wikiM = new WikiMediator();
-
-
-    private Boolean status;
-    private int limit;
+    private int clientLimit;
     private int port;
-
-    private ServerSocket sSocket;
+    private int activeClients = 0;
+    private ServerSocket serverSocket;
 
     // TODO: make this capable of handling multiple clients at once
 
@@ -57,53 +52,68 @@ public class WikiMediatorServer {
      * @param n    the number of concurrent requests the server can handle, cannot be negative.
      */
     public WikiMediatorServer(int port, int n) {
-        //TODO: figure out what to do here
+        this.port = port;
+        this.clientLimit = n;
         try {
-            if (!(port <= 0 || port > 65535)) {
-                throw new Exception("Port issue.");
-            }
-
-            this.limit = n;
-            this.port = port;
-
-            // create socket
-            this.sSocket = new ServerSocket(this.port);
-            Socket cSocket = sSocket.accept();
-
-            // create reader and writer
-            PrintWriter w = new PrintWriter(new OutputStreamWriter(cSocket.getOutputStream()), true);
-            BufferedReader r = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
-
-            if (!cSocket.isConnected()) {
-                throw new IOException("Socket connection issue.");
-            }
-
-            // parsing to json object
-            String jsonString = r.readLine();
-            JsonElement json = JsonParser.parseString(jsonString);
-            JsonObject response = new JsonObject();
-            response.addProperty("status", "pending");
-
-            if (json.getAsJsonObject() != null) {
-                JsonObject inputQuery = json.getAsJsonObject();
-                processRequest(inputQuery, response);
-                response.remove("status");
-                response.addProperty("status", "success");
-            } else {
-                response.remove("status");
-                response.addProperty("status", "failed");
-                w.write(response.toString());
-            }
-        } catch (IOException ioe) {
-            System.out.println("Issue with socketing.");
-        } catch (Exception e) {
-            System.out.println("Error...");
+            serverSocket = new ServerSocket(port);
+        } catch (IOException e) {
+            System.out.print("Exception thrown creating server socket.");
+            e.printStackTrace();
         }
     }
 
+    private void wikiServe() {
+        try {
+            if ((port <= 0 || port > 65535)) {
+                throw new Exception("Port issue.");
+            }
+
+            System.out.println("Running");
+
+            // create socket and connect client
+            Socket cSocket = this.serverSocket.accept();
+
+            Boolean listening = true;
+
+            while (listening) {
+                System.out.println("Thread started");
+                Socket clientSocket = serverSocket.accept();
+
+                Thread wikiClientHandler = new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            wikiServerThread(clientSocket);
+                        } catch (InterruptedException | IOException e) {
+                            e.printStackTrace();
+                        } finally {
+                            try {
+                                clientSocket.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                });
+                // starts thread
+                wikiClientHandler.start();
+            }
+
+
+        } catch (InterruptedException ie) {
+            System.out.println("Interrupted exception");
+            ie.printStackTrace();
+        } catch (IOException ioe) {
+            System.out.println("Issue with socketing.");
+            ioe.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     private void processRequest(JsonObject inputQuery, JsonObject response) throws IOException {
         // GETTING ID
+        System.out.println("Processing Request");
+
         String id = inputQuery.get("id").getAsString();
         String type = inputQuery.get("type").getAsString();
 
@@ -113,22 +123,30 @@ public class WikiMediatorServer {
         // SIMPLE SEARCH
         switch (type) {
             case "simpleSearch":
+                System.out.println("simpleSearch Request");
                 simpleSearchRequest(inputQuery, response);
                 break;
             // GETPAGE
             case "getPage":
+                System.out.println("getPage Request");
                 getPageRequest(inputQuery, response);
                 break;
             // GETCONNECTEDPAGES -- String pageTitle, int hops
             case "getConnectedPages":
+                System.out.println("getConnectedPages Request");
+
                 getConnectedPagesRequest(inputQuery, response);
                 break;
             // ZEITGEIST -- int limit
             case "zeitgeist":
+                System.out.println("zeitgeist Request");
+
                 zeitgeistRequest(inputQuery, response);
                 break;
             // TRENDING -- int limit
             case "trending":
+                System.out.println("trending Request");
+
                 trendingRequest(inputQuery, response);
                 break;
             default:
@@ -176,4 +194,59 @@ public class WikiMediatorServer {
 
     }
 
+    private void wikiServerThread(Socket cSocket) throws IOException, InterruptedException {
+        if (activeClients > clientLimit) {
+            System.out.println("Too many clients, please try again later.");
+            cSocket.close();
+        }
+
+        System.out.println("New client connected");
+        activeClients++;
+
+        // create reader and writer
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(cSocket.getOutputStream()), true);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
+
+        String jsonString;
+
+        while ((jsonString = reader.readLine()) != null) {
+            // parsing to json object
+            JsonElement json = JsonParser.parseString(jsonString);
+            JsonObject response = new JsonObject();
+            response.addProperty("status", "pending");
+
+            if (json.getAsJsonObject() != null) {
+                JsonObject inputQuery = json.getAsJsonObject();
+                processRequest(inputQuery, response);
+                response.remove("status");
+                response.addProperty("status", "success");
+                writer.write(response.toString());
+                System.out.println("Parsed and ready: " + response.toString());
+            } else {
+                response.remove("status");
+                response.addProperty("status", "failed");
+                writer.write(response.toString());
+                System.out.println("Parsed and ready: " + response.toString());
+
+            }
+        }
+
+        System.out.println("Leaving thread.");
+
+        writer.flush();
+        reader.close();
+        cSocket.close();
+        activeClients--;
+    }
+
+    public static void main(String[] args) {
+        try {
+            WikiMediatorServer wikiServer = new WikiMediatorServer(4765, 1);
+            wikiServer.wikiServe();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
+
+

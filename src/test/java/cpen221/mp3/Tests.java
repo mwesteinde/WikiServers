@@ -1,5 +1,6 @@
 package cpen221.mp3;
 
+import cpen221.mp3.server.WikiMediatorServer;
 import cpen221.mp3.wikimediator.WikiMediator;
 import fastily.jwiki.core.Wiki;
 import org.junit.Assert;
@@ -144,6 +145,14 @@ public class Tests {
         System.out.print(wiki.search("dark side of the blue sun", 2).toString() + "\n ");
 
     }
+
+    @Test
+    public void serverTest() {
+        WikiMediatorServer wikiServer = new WikiMediatorServer(3, 1);
+
+
+    }
+
 
 
 }
