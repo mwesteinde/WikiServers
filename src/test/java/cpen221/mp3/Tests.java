@@ -104,7 +104,7 @@ public class Tests {
         WikiMediator wikiM = new WikiMediator();
 
         for (int i = 0 ; i < 3; i++) {
-            wikiM.simpleSearch("zeitgeist ", 1);
+            wikiM.simpleSearch("zeitgeist", 1);
         }
 
         for (int i = 0 ; i < 4; i++) {
