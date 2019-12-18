@@ -41,6 +41,29 @@ public class Tests {
     }
 
     @Test
+    public void getConnectedTestEmpty() {
+        WikiMediator wikiM = new WikiMediator();
+        Wiki wiki = new Wiki("en.wikipedia.org");
+
+        Assert.assertEquals("UBC", wikiM.getConnectedPages("UBC", 0).get(0));
+
+        List<String> wikiMConnections = wikiM.getConnectedPages("GFHEKJKNJE", 3);
+
+        Assert.assertTrue(wikiMConnections.isEmpty());
+    }
+
+    @Test
+    public void getConnectedTestMultipleHops() {
+        WikiMediator wikiM = new WikiMediator();
+        Wiki wiki = new Wiki("en.wikipedia.org");
+
+        List<String> wikiMConnections = wikiM.getConnectedPages("UBC", 3);
+        List<String> wikiConnections = new ArrayList<>();
+
+        wikiMConnections.forEach(System.out::print);
+    }
+
+    @Test
     public void getPageTest() {
         WikiMediator wikiM = new WikiMediator();
         Wiki wiki = new Wiki("en.wikipedia.org");
@@ -51,6 +74,17 @@ public class Tests {
 
         Assert.assertEquals(sM, s);
     }
+
+    @Test
+    public void getPageTestEmptyString() {
+        WikiMediator wikiM = new WikiMediator();
+        Wiki wiki = new Wiki("en.wikipedia.org");
+
+        String sM = wikiM.getPage("UBChfkdkjnfkdnjj");
+        Assert.assertEquals(sM, "");
+
+    }
+
 
     @Test
     public void zeitgeistTest() {
@@ -69,6 +103,12 @@ public class Tests {
         ArrayList<String> expected = new ArrayList<>();
         expected.add("zeitgeist");
         List actual = wikiM.zeitgeist(1);
+        List actual2 = wikiM.zeitgeist(4);
+        ArrayList<String> expected2 = new ArrayList<>();
+        expected2.add("zeitgeist");
+        expected2.add("UBC");
+        expected2.add("hello");
+
 
         Assert.assertEquals(expected, actual);
 
@@ -97,6 +137,8 @@ public class Tests {
         expected.add("zeitgeist");
 
         Assert.assertEquals(expected, wikiM.trending(3));
+
+        Assert.assertTrue(wikiM.trending(0).isEmpty());
     }
 
     @Test
@@ -144,6 +186,33 @@ public class Tests {
         System.out.print(wiki.search("dark side of the blue sun", 2).toString() + "\n ");
 
     }
+
+    @Test
+    public void peakLoad30sTest() throws InterruptedException {
+        WikiMediator wikiM = new WikiMediator();
+
+        for (int i = 0 ; i < 3; i++) {
+            wikiM.simpleSearch("zeitgeist", 1);
+        }
+
+        for (int i = 0 ; i < 4; i++) {
+            wikiM.simpleSearch("hi", 1);
+        }
+
+        Thread.sleep(31*1000);
+
+        for (int i = 0 ; i < 5; i++) {
+            wikiM.simpleSearch("goodbye", 1);
+        }
+
+        for (int i = 0 ; i < 6; i++) {
+            wikiM.getPage("UBC");
+        }
+
+        Assert.assertEquals(11, wikiM.peakLoad30s());
+
+    }
+
 
 
 }
