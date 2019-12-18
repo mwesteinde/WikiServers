@@ -10,7 +10,7 @@ import java.net.Socket;
 public class WikiClient {
     private Socket socket;
     private BufferedReader reader;
-    private PrintWriter writer;
+    private  PrintWriter writer;
 
     public WikiClient(String hostname, int port) throws IOException {
         socket = new Socket(hostname, port);
@@ -18,15 +18,14 @@ public class WikiClient {
         writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
     }
 
-    public void sendRequest(String s) {
-        writer.print(s);
+    public void sendRequest(String s) throws IOException {
+        writer.println(s);
         System.out.println("Sending request");
         writer.flush();
     }
 
     public JsonObject getReply() throws IOException {
         System.out.println("getting reply");
-
         String reply = reader.readLine();
         System.out.println("Reply received: "+reply);
 
@@ -53,7 +52,7 @@ public class WikiClient {
         try{
             WikiClient bill = new WikiClient("localhost", 555);
 
-            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\"}");
+            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"2\"}");
 
             JsonObject jObj = bill.getReply();
             System.out.println(jObj.toString());

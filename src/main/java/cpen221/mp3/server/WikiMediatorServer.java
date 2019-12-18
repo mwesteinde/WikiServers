@@ -10,6 +10,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 /**
  * A server which allows a client to use WikiMediator and can handle a specified number of
@@ -18,9 +20,6 @@ import java.util.List;
 
 public class WikiMediatorServer {
 
-    static final String TIMEOUT_MESSAGE = "Operation timed out.";
-    static final Boolean FAILED = false;
-    static final Boolean SUCCESS = true;
     static final String IP_ADDRESS = "197.35.26.96";
 
     private final WikiMediator wikiM = new WikiMediator();
@@ -28,6 +27,8 @@ public class WikiMediatorServer {
     private int port;
     private int activeClients = 0;
     private ServerSocket serverSocket;
+
+    private final String timeoutReply ="{status: \"failed\", response: \"Operation timed out.\"}";
 
     // TODO: make this capable of handling multiple clients at once
 
@@ -96,7 +97,6 @@ public class WikiMediatorServer {
                 wikiClientHandler.start();
             }
 
-
         } catch (InterruptedException ie) {
             System.out.println("Interrupted exception");
             ie.printStackTrace();
@@ -150,6 +150,8 @@ public class WikiMediatorServer {
             default:
                 throw new IOException();
         }
+        response.remove("status");
+        response.addProperty("status", "success");
 
     }
 
@@ -197,16 +199,20 @@ public class WikiMediatorServer {
             System.out.println("Too many clients, please try again later.");
             cSocket.close();
         }
+
         System.out.println("New client connected");
         activeClients++;
 
         // create reader and writer
-        PrintWriter writer = new PrintWriter(new OutputStreamWriter(cSocket.getOutputStream()), true);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
+        PrintWriter writer =
+                new PrintWriter(new OutputStreamWriter(cSocket.getOutputStream()), true);
+        BufferedReader reader =
+                new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
 
         System.out.println("reader and writer created");
         String jsonString;
         for (jsonString = reader.readLine(); jsonString != null; jsonString = reader.readLine()) {
+            System.out.println("read line " + jsonString);
             // parsing to json object
             JsonElement json = JsonParser.parseString(jsonString);
             System.out.println("element created");
@@ -218,16 +224,67 @@ public class WikiMediatorServer {
                 JsonObject inputQuery = json.getAsJsonObject();
                 System.out.println("About to process request");
 
-                processRequest(inputQuery, response);
-                response.remove("status");
-                response.addProperty("status", "success");
-                writer.print(response.toString());
-                System.out.println("Parsed and ready: " + response.toString());
+
+                AtomicInteger winner = new AtomicInteger(0);
+                //THREAD
+                Thread process = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            processRequest(inputQuery, response);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        winner.compareAndSet(0, 1);
+                    }
+                });
+
+                JsonElement timeout = inputQuery.get("timeout");
+
+                if (timeout != null) {
+                    Thread timer = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(timeout.getAsInt() * 1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            winner.compareAndSet(0, 2);
+                        }
+                    });
+                    timer.start();
+                }
+
+                process.start();
+
+                while (winner.get() == 0) {
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                int resultOfRace = winner.get();
+                System.out.println(resultOfRace);
+
+                if (resultOfRace == 1) {
+                    System.out.println("Parsed and ready: " + response.toString());
+                    writer.println(response.toString());
+                    System.out.println("sent: " + response.toString());
+                } else {
+                    JsonElement timeoutResult = JsonParser.parseString(timeoutReply);
+                    JsonObject result = timeoutResult.getAsJsonObject();
+                    result.add("id", inputQuery.get("id"));
+                    writer.println(result.toString());
+                    System.out.println("sent: " + response.toString());
+                }
             } else {
                 response.remove("status");
                 response.addProperty("status", "failed");
+                System.out.println("Failed ready to send: " + response.toString());
                 writer.print(response.toString());
-                System.out.println("Parsed and ready: " + response.toString());
+                System.out.println("sent");
             }
         }
 

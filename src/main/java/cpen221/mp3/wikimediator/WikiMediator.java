@@ -247,7 +247,6 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     public int peakLoad30s() {
         call("basicRequest");
 
-
         return callCache.getMaxCached();
     }
 
