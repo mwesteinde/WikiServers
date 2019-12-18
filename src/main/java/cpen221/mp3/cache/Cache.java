@@ -1,9 +1,6 @@
 package cpen221.mp3.cache;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Cache represents a generic cache for up to a certain number of Objects
@@ -109,16 +106,29 @@ public class Cache<T extends Cacheable> {
         long time = java.lang.System.currentTimeMillis() / 1000;
         long longest = 0;
 
-        for (Map.Entry i : cache.entrySet()) {
+        Iterator<Map.Entry<T, Long>> itr = cache.entrySet().iterator();
+        while (itr.hasNext()) {
+            Map.Entry<T, Long> i = itr.next();
             long duration = time - (long) i.getValue();
             if (duration > this.timeout) {
-                cache.remove(i);
+                itr.remove();
                 updateSize();
             }
             if (duration >= longest) {
                 last = i;
             }
         }
+/**
+        for (Map.Entry i : cache.entrySet()) {
+            long duration = time - (long) i.getValue();
+            if (duration > this.timeout) {
+                cache.remove(i.getKey());
+                updateSize();
+            }
+            if (duration >= longest) {
+                last = i;
+            }
+        }*/
         return last;
     }
 

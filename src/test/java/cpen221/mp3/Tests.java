@@ -199,7 +199,7 @@ public class Tests {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(31*1000);
+        Thread.sleep(5*1000);
 
         for (int i = 0 ; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
@@ -209,7 +209,33 @@ public class Tests {
             wikiM.getPage("UBC");
         }
 
-        Assert.assertEquals(11, wikiM.peakLoad30s());
+        Assert.assertEquals(19, wikiM.peakLoad30s());
+
+    }
+
+    @Test
+    public void peakLoad30sTestTime() throws InterruptedException {
+        WikiMediator wikiM = new WikiMediator();
+
+        for (int i = 0 ; i < 3; i++) {
+            wikiM.simpleSearch("zeitgeist", 1);
+        }
+
+        for (int i = 0 ; i < 4; i++) {
+            wikiM.simpleSearch("hi", 1);
+        }
+
+        Thread.sleep(60*1000);
+
+        for (int i = 0 ; i < 5; i++) {
+            wikiM.simpleSearch("goodbye", 1);
+        }
+
+        for (int i = 0 ; i < 6; i++) {
+            wikiM.getPage("UBC");
+        }
+
+        Assert.assertEquals(12, wikiM.peakLoad30s());
 
     }
 

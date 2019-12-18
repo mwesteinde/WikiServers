@@ -48,7 +48,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     private HashMap<String, Query> qMap = new HashMap<>();
 
     /* Tracks calls to methods in 30 second intervals */
-    private Cache callCache = new Cache(300, 30);
+    private Cache callCache = new Cache(Integer.MAX_VALUE, 50);
 
     private Cache thisCache = new Cache(256, 12*60*60);
 
@@ -112,7 +112,6 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
             call("search");
             queried(pageTitle);
             StringCacheable o = (StringCacheable) thisCache.get(pageTitle);
-            thisCache.touch(pageTitle);
             return o.text();
         } catch (NotPresentException e) {
 
@@ -213,7 +212,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> trending(int limit) {
         call("basicRequest");
-        //TODO: use cache
+
 
         if (limit == 0) {
             return new ArrayList<>();
@@ -242,7 +241,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * its creation.
      *
      * @return The maximum number of method calls within 30 seconds over the lifespan of
-     * this WikiMediator.
+     * this WikiMediator. peakload30s counts as a method call.
      */
     public int peakLoad30s() {
         call("basicRequest");
