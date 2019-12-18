@@ -6,7 +6,6 @@ import com.google.gson.JsonParser;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.Buffer;
 
 public class WikiClient {
     private Socket socket;
@@ -20,12 +19,17 @@ public class WikiClient {
     }
 
     public void sendRequest(String s) {
-        writer.print("Request string: " + s);
+        writer.print(s);
+        System.out.println("Sending request");
         writer.flush();
     }
 
     public JsonObject getReply() throws IOException {
+        System.out.println("getting reply");
+
         String reply = reader.readLine();
+        System.out.println("Reply received: "+reply);
+
         if(reply == null) {
             throw new IOException("connection terminated unexpectedly");
         }
@@ -47,7 +51,7 @@ public class WikiClient {
 
     public static void main(String[] args) {
         try{
-            WikiClient bill = new WikiClient("localhost", 4949);
+            WikiClient bill = new WikiClient("localhost", 555);
 
             bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\"}");
 
@@ -58,7 +62,6 @@ public class WikiClient {
         catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
 }

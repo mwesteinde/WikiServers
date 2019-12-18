@@ -71,26 +71,24 @@ public class WikiMediatorServer {
             System.out.println("Running");
 
             // create socket and connect client
-            Socket cSocket = this.serverSocket.accept();
 
             Boolean listening = true;
 
             while (listening) {
                 System.out.println("Thread started");
+
                 Socket clientSocket = serverSocket.accept();
 
                 Thread wikiClientHandler = new Thread(new Runnable() {
                     public void run() {
                         try {
-                            wikiServerThread(clientSocket);
-                        } catch (InterruptedException | IOException e) {
-                            e.printStackTrace();
-                        } finally {
                             try {
+                                wikiServerThread(clientSocket);
+                            } finally {
                                 clientSocket.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
                             }
+                        } catch (IOException ioe) {
+                            ioe.printStackTrace();
                         }
                     }
                 });
@@ -194,12 +192,11 @@ public class WikiMediatorServer {
 
     }
 
-    private void wikiServerThread(Socket cSocket) throws IOException, InterruptedException {
+    private void wikiServerThread(Socket cSocket) throws IOException {
         if (activeClients > clientLimit) {
             System.out.println("Too many clients, please try again later.");
             cSocket.close();
         }
-
         System.out.println("New client connected");
         activeClients++;
 
@@ -207,29 +204,34 @@ public class WikiMediatorServer {
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(cSocket.getOutputStream()), true);
         BufferedReader reader = new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
 
+        System.out.println("reader and writer created");
         String jsonString;
-
-        while ((jsonString = reader.readLine()) != null) {
+        for (jsonString = reader.readLine(); jsonString != null; jsonString = reader.readLine()) {
             // parsing to json object
             JsonElement json = JsonParser.parseString(jsonString);
+            System.out.println("element created");
+
             JsonObject response = new JsonObject();
             response.addProperty("status", "pending");
 
             if (json.getAsJsonObject() != null) {
                 JsonObject inputQuery = json.getAsJsonObject();
+                System.out.println("About to process request");
+
                 processRequest(inputQuery, response);
                 response.remove("status");
                 response.addProperty("status", "success");
-                writer.write(response.toString());
+                writer.print(response.toString());
                 System.out.println("Parsed and ready: " + response.toString());
             } else {
                 response.remove("status");
                 response.addProperty("status", "failed");
-                writer.write(response.toString());
+                writer.print(response.toString());
                 System.out.println("Parsed and ready: " + response.toString());
-
             }
         }
+
+        cSocket.close();
 
         System.out.println("Leaving thread.");
 
@@ -241,7 +243,7 @@ public class WikiMediatorServer {
 
     public static void main(String[] args) {
         try {
-            WikiMediatorServer wikiServer = new WikiMediatorServer(4765, 1);
+            WikiMediatorServer wikiServer = new WikiMediatorServer(555, 1);
             wikiServer.wikiServe();
         } catch (Exception e) {
             e.printStackTrace();
