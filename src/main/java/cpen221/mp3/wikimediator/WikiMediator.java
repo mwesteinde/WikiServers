@@ -138,7 +138,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * @param pageTitle The title of the page to start hopping from, cannot be empty.
      * @param hops      The number of 'hops' to take from pageTitle, must be >= 0.
      * @return A a list of page titles within 'hops' of the page pageTitle,
-     * an empty list if the page does not exist.
+     * an empty list if the page does not exist. If hops is 0, return list with pageTitle.
      */
     public List<String> getConnectedPages(String pageTitle, int hops) {
         call("basicRequest");
@@ -246,6 +246,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public int peakLoad30s() {
         call("basicRequest");
+
 
         return callCache.getMaxCached();
     }
