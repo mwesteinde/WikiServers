@@ -240,19 +240,16 @@ public class WikiMediatorServer {
                 });
 
                 JsonElement timeout = inputQuery.get("timeout");
-
+                Thread timer = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(timeout.getAsInt() * 1000);
+                        } catch (InterruptedException ignored) { }
+                        winner.compareAndSet(0, 2);
+                    }
+                });
                 if (timeout != null) {
-                    Thread timer = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                Thread.sleep(timeout.getAsInt() * 1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            winner.compareAndSet(0, 2);
-                        }
-                    });
                     timer.start();
                 }
 
@@ -265,6 +262,9 @@ public class WikiMediatorServer {
                         e.printStackTrace();
                     }
                 }
+                timer.interrupt();
+                process.interrupt();
+
                 int resultOfRace = winner.get();
                 System.out.println(resultOfRace);
 
