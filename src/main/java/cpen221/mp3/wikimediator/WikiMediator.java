@@ -48,7 +48,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     private HashMap<String, Query> qMap = new HashMap<>();
 
     /* Tracks calls to methods in 30 second intervals */
-    private Cache callCache = new Cache(Integer.MAX_VALUE, 50);
+    private Cache callCache = new Cache(Integer.MAX_VALUE, 30);
 
     private Cache thisCache = new Cache(256, 12*60*60);
 
@@ -274,11 +274,9 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * @param callType The type of method that has been called, cannot be empty.
      */
     private void call(String callType) {
-        try {
+
             callCache.put(new MethodCall(callType));
-        } catch (Exception e) {
-            System.out.println("Exception thrown when using callCache.put()");
-        }
+
         TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
     }
 

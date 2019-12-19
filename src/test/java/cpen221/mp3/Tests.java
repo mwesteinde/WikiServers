@@ -1,5 +1,8 @@
 package cpen221.mp3;
 
+import cpen221.mp3.cache.Cache;
+import cpen221.mp3.cache.NotPresentException;
+import cpen221.mp3.cache.StringCacheable;
 import cpen221.mp3.server.WikiMediatorServer;
 import cpen221.mp3.wikimediator.WikiMediator;
 import fastily.jwiki.core.Wiki;
@@ -58,7 +61,7 @@ public class Tests {
         WikiMediator wikiM = new WikiMediator();
         Wiki wiki = new Wiki("en.wikipedia.org");
 
-        List<String> wikiMConnections = wikiM.getConnectedPages("UBC", 3);
+        List<String> wikiMConnections = wikiM.getConnectedPages("UBC", 2);
         List<String> wikiConnections = new ArrayList<>();
 
         wikiMConnections.forEach(System.out::print);
@@ -238,6 +241,111 @@ public class Tests {
 
         Assert.assertEquals(12, wikiM.peakLoad30s());
 }
+
+    @Test
+    public void peakLoad30sTestTime2() throws InterruptedException {
+        WikiMediator wikiM = new WikiMediator();
+
+        for (int i = 0 ; i < 3; i++) {
+            wikiM.simpleSearch("zeitgeist", 1);
+        }
+
+        for (int i = 0 ; i < 4; i++) {
+            wikiM.simpleSearch("hi", 1);
+        }
+
+        Thread.sleep(31*1000);
+
+        for (int i = 0 ; i < 5; i++) {
+            wikiM.simpleSearch("goodbye", 1);
+        }
+
+        for (int i = 0 ; i < 6; i++) {
+            wikiM.getPage("UBC");
+        }
+
+        Assert.assertEquals(12, wikiM.peakLoad30s());
+    }
+
+
+    StringCacheable sc1 = new StringCacheable("a", "a");
+    StringCacheable sc2 = new StringCacheable("b", "b");
+    StringCacheable sc3 = new StringCacheable("c", "c");
+    StringCacheable sc4 = new StringCacheable("d", "d");
+    StringCacheable sc5 = new StringCacheable("e", "e");
+    StringCacheable sc6 = new StringCacheable("f", "f");
+    StringCacheable sc7 = new StringCacheable("g", "g");
+
+    @Test(expected = NotPresentException.class)
+    public void cacheFullTest() throws NotPresentException, InterruptedException {
+        Cache thisCache = new Cache(5,1000);
+
+        thisCache.put(sc1);
+        Thread.sleep(1);
+        thisCache.put(sc2);
+        Thread.sleep(1);
+        thisCache.put(sc3);
+        Thread.sleep(1);
+        thisCache.put(sc4);
+        Thread.sleep(1);
+        thisCache.put(sc5);
+        Thread.sleep(1);
+        thisCache.put(sc6);
+        Thread.sleep(1);
+        thisCache.put(sc7);
+        thisCache.put(sc7);
+
+        thisCache.get("a");
+        boolean sentinel = false;
+        try {
+            thisCache.get("b");
+        } catch (NotPresentException e) {
+            sentinel = true;
+        }
+        Assert.assertTrue(sentinel);
+    }
+
+    @Test
+    public void cacheUpdateTest() throws InterruptedException {
+        Cache thisCache = new Cache(7,1000);
+
+        thisCache.put(sc1);
+        Thread.sleep(1);
+        thisCache.put(sc2);
+        Thread.sleep(1);
+        thisCache.put(sc3);
+        Thread.sleep(1);
+        thisCache.put(sc4);
+        Thread.sleep(1);
+        thisCache.put(sc5);
+        Thread.sleep(1);
+        thisCache.put(sc6);
+
+
+        Assert.assertTrue(thisCache.update(sc1));
+        Assert.assertTrue(!thisCache.update(sc7));
+    }
+
+    @Test
+    public void cacheTouchTest() throws InterruptedException{
+        Cache thisCache = new Cache(7,1000);
+
+        thisCache.put(sc1);
+        long time = System.currentTimeMillis();
+        Thread.sleep(1);
+        thisCache.put(sc2);
+        Thread.sleep(1);
+        thisCache.put(sc3);
+        Thread.sleep(1);
+        thisCache.put(sc4);
+        Thread.sleep(1);
+        thisCache.put(sc5);
+        Thread.sleep(1);
+        thisCache.put(sc6);
+
+        Assert.assertTrue(thisCache.touch("a"));
+        Assert.assertTrue(!thisCache.touch("g"));
+    }
 
     public void serverTest() {
         WikiMediatorServer wikiServer = new WikiMediatorServer(3, 1);
