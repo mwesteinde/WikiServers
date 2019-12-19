@@ -62,24 +62,19 @@ public class Cache<T extends Cacheable> {
      * If the cache is full then remove the least recently accessed object to
      * make room for the new object.
      *
-     * @param t the value to add to the cache
+     * @param t the value to add to the cache, type t implements cacheable.
      * @return true if an object was removed and false if not.
-     * @throws Exception if last was not updated.
      */
-    public boolean put(T t) throws Exception {
+    public synchronized boolean put(T t) {
         long time;
         boolean full = false;
 
-        time = java.lang.System.currentTimeMillis() / 1000;
+        time = java.lang.System.currentTimeMillis();
 
-        //TODO: changed this because it was throwing an exception when the cache was empty
-        Object last = expiry();
+        Object last = expiry(time);
         if (cache.size() == 0) {
             cache.put(t, time);
         } else {
-            if (last == null) {
-                throw new Exception("last == null");
-            }
             if (cache.containsKey(t)) {
                 cache.replace(t, cache.get(t), time);
             } else {
@@ -101,34 +96,24 @@ public class Cache<T extends Cacheable> {
      *
      * @return The oldest object in this cache.
      */
-    private Object expiry() {
-        Object last = null;
-        long time = java.lang.System.currentTimeMillis() / 1000;
+    private synchronized T expiry(long time) {
+        T last = null;
         long longest = 0;
 
         Iterator<Map.Entry<T, Long>> itr = cache.entrySet().iterator();
         while (itr.hasNext()) {
             Map.Entry<T, Long> i = itr.next();
             long duration = time - (long) i.getValue();
-            if (duration > this.timeout) {
+            if (duration > this.timeout * 1000) {
                 itr.remove();
                 updateSize();
             }
             if (duration >= longest) {
-                last = i;
+                last = i.getKey();
+                longest = duration;
             }
         }
-/**
-        for (Map.Entry i : cache.entrySet()) {
-            long duration = time - (long) i.getValue();
-            if (duration > this.timeout) {
-                cache.remove(i.getKey());
-                updateSize();
-            }
-            if (duration >= longest) {
-                last = i;
-            }
-        }*/
+
         return last;
     }
 
@@ -141,8 +126,8 @@ public class Cache<T extends Cacheable> {
      */
     public T get(String id) throws NotPresentException {
         T returned = null;
-
-        Object o = expiry();
+        long time = java.lang.System.currentTimeMillis();
+        Object o = expiry(time);
 
         for (Map.Entry i : cache.entrySet()) {
             T now = (T) i.getKey();
@@ -166,10 +151,9 @@ public class Cache<T extends Cacheable> {
      */
     public boolean touch(String id) {
         T now;
-        Object o = expiry();
-        long time;
+        long time = java.lang.System.currentTimeMillis();
+        Object o = expiry(time);
 
-        time = java.lang.System.currentTimeMillis() / 1000;
         try {
             now = get(id);
         } catch (NotPresentException e) {
@@ -190,11 +174,13 @@ public class Cache<T extends Cacheable> {
      */
     public boolean update(T t) {
         boolean returned = false;
-        Object o = expiry();
-        long time = java.lang.System.currentTimeMillis() / 1000;
+        long time = java.lang.System.currentTimeMillis();
+        Object o = expiry(time);
+
         String id = t.id();
-        for (Map.Entry i : cache.entrySet()) {
-            T now = (T) i.getKey();
+        Iterator<Map.Entry<T, Long>> itr = cache.entrySet().iterator();
+        while (itr.hasNext()) {
+            T now = (T) itr.next().getKey();
             if (now.id().equals(id)) {
                 returned = true;
                 cache.remove(now);
