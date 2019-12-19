@@ -53,6 +53,7 @@ public class WikiClient {
             WikiClient bill = new WikiClient("localhost", 555);
 
             bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
+//            bill.sendRequest("{id: \"localhost\", type: \"pageRequest\", query: \"Barack Obama\", timeout: \"10000\"}");
 
             JsonObject jObj = bill.getReply();
             System.out.println(jObj.toString());

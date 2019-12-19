@@ -28,6 +28,7 @@ public class WikiMediatorServer {
     private int activeClients = 0;
     private ServerSocket serverSocket;
 
+    // reply if wikipedia does not respond within timeout time
     private final String timeoutReply ="{status: \"failed\", response: \"Operation timed out.\"}";
 
     // TODO: make this capable of handling multiple clients at once
@@ -56,6 +57,7 @@ public class WikiMediatorServer {
         this.port = port;
         this.clientLimit = n;
         try {
+            // creates new server socket
             serverSocket = new ServerSocket(port);
         } catch (IOException e) {
             System.out.print("Exception thrown creating server socket.");
@@ -75,17 +77,22 @@ public class WikiMediatorServer {
 
             Boolean listening = true;
 
+            // while waiting for a connection
             while (listening) {
                 System.out.println("Thread started");
 
+                // accepts a connection from a client
                 Socket clientSocket = serverSocket.accept();
 
+                // mew client thread
                 Thread wikiClientHandler = new Thread(new Runnable() {
                     public void run() {
                         try {
                             try {
+                                // starts thread
                                 wikiServerThread(clientSocket);
                             } finally {
+                                // closes socket afterwards
                                 clientSocket.close();
                             }
                         } catch (IOException ioe) {
@@ -107,7 +114,7 @@ public class WikiMediatorServer {
             e.printStackTrace();
         }
     }
-
+    /* Method to process input request */
     private void processRequest(JsonObject inputQuery, JsonObject response) throws IOException {
         // GETTING ID
         System.out.println("Processing Request");
@@ -118,6 +125,7 @@ public class WikiMediatorServer {
         response.addProperty("id", id);
         response.addProperty("status", "pending");
 
+        // TODO: make sure the methods return the correct values - empty arrays being returned for some
         // SIMPLE SEARCH
         switch (type) {
             case "simpleSearch":
@@ -132,24 +140,23 @@ public class WikiMediatorServer {
             // GETCONNECTEDPAGES -- String pageTitle, int hops
             case "getConnectedPages":
                 System.out.println("getConnectedPages Request");
-
                 getConnectedPagesRequest(inputQuery, response);
                 break;
             // ZEITGEIST -- int limit
             case "zeitgeist":
                 System.out.println("zeitgeist Request");
-
                 zeitgeistRequest(inputQuery, response);
                 break;
             // TRENDING -- int limit
             case "trending":
                 System.out.println("trending Request");
-
                 trendingRequest(inputQuery, response);
                 break;
             default:
+                // if no match
                 throw new IOException();
         }
+        // updates status of the JSON object to be returned
         response.remove("status");
         response.addProperty("status", "success");
 
@@ -158,73 +165,76 @@ public class WikiMediatorServer {
     private void simpleSearchRequest(JsonObject inputQuery, JsonObject response) {
         // getting information to use wikimediator
         String query = inputQuery.get("query").getAsString();
-        String limit = inputQuery.get("limit").getAsString();
+        Integer limit = inputQuery.get("limit").getAsInt();
 
         // add search results
-        List responseList = wikiM.simpleSearch(inputQuery.get("query").getAsString(), inputQuery.get("limit").getAsInt());
-        String stringResponse = String.join(",", responseList);
-        response.addProperty("response", stringResponse);
+        List responseList = wikiM.simpleSearch(query, limit);
+        response.addProperty("response", responseList.toString());
     }
 
     private void getPageRequest(JsonObject inputQuery, JsonObject response) {
-
-        String responseString = wikiM.getPage(inputQuery.get("pageTitle").getAsString());
-        response.addProperty("response", responseString);
-
+        String query = inputQuery.get("pageTitle").getAsString();
+        response.addProperty("response", wikiM.getPage(query));
+        // to see what's happening
+        System.out.println("getPageRequest: " + wikiM.getPage(query));
     }
 
     private void getConnectedPagesRequest(JsonObject inputQuery, JsonObject response) {
         List responseList = wikiM.getConnectedPages(inputQuery.get("query").getAsString(), inputQuery.get("hops").getAsInt());
-        String stringResponse = String.join(",", responseList);
-        response.addProperty("response", stringResponse);
-
+        response.addProperty("response", responseList.toString());
     }
 
     private void trendingRequest(JsonObject inputQuery, JsonObject response) {
-        List responseList = wikiM.trending(inputQuery.get("limit").getAsInt());
-        String stringResponse = String.join(",", responseList);
-        response.addProperty("response", stringResponse);
-
+//        String stringResponse = String.join(",", wikiM.trending(inputQuery.get("limit").getAsInt()));
+        response.addProperty("response", wikiM.trending(inputQuery.get("limit").getAsInt()).toString());
     }
 
     private void zeitgeistRequest(JsonObject inputQuery, JsonObject response) {
         List responseList = wikiM.zeitgeist(inputQuery.get("limit").getAsInt());
-        String stringResponse = String.join(",", responseList);
-        response.addProperty("response", stringResponse);
+        response.addProperty("response", responseList.toString());
 
     }
 
+    //
     private void wikiServerThread(Socket cSocket) throws IOException {
+        // checks how many clients are already connected
+        PrintWriter writer =
+                new PrintWriter(new OutputStreamWriter(cSocket.getOutputStream()), true);
+        BufferedReader reader =
+                new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
+
         if (activeClients > clientLimit) {
+            // need to send this to the client
             System.out.println("Too many clients, please try again later.");
+            writer.println("Too many clients, please try again later.");
+            writer.flush();
+            reader.close();
             cSocket.close();
         }
 
         System.out.println("New client connected");
         activeClients++;
 
-        // create reader and writer
-        PrintWriter writer =
-                new PrintWriter(new OutputStreamWriter(cSocket.getOutputStream()), true);
-        BufferedReader reader =
-                new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
-
         System.out.println("reader and writer created");
         String jsonString;
+
+        // takes input and responds
         for (jsonString = reader.readLine(); jsonString != null; jsonString = reader.readLine()) {
             System.out.println("read line " + jsonString);
             // parsing to json object
+            // make input into a json element
             JsonElement json = JsonParser.parseString(jsonString);
             System.out.println("element created");
 
+
             JsonObject response = new JsonObject();
             response.addProperty("status", "pending");
-
+            // creating response json object
             if (json.getAsJsonObject() != null) {
                 JsonObject inputQuery = json.getAsJsonObject();
                 System.out.println("About to process request");
 
-
+                // for timeout
                 AtomicInteger winner = new AtomicInteger(0);
                 //THREAD
                 Thread process = new Thread(new Runnable() {
@@ -255,6 +265,7 @@ public class WikiMediatorServer {
 
                 process.start();
 
+                // waits for first thread to finish
                 while (winner.get() == 0) {
                     try {
                         Thread.sleep(10);
@@ -266,7 +277,6 @@ public class WikiMediatorServer {
                 process.interrupt();
 
                 int resultOfRace = winner.get();
-                System.out.println(resultOfRace);
 
                 if (resultOfRace == 1) {
                     System.out.println("Parsed and ready: " + response.toString());
@@ -280,6 +290,7 @@ public class WikiMediatorServer {
                     System.out.println("sent: " + response.toString());
                 }
             } else {
+                // failed response
                 response.remove("status");
                 response.addProperty("status", "failed");
                 System.out.println("Failed ready to send: " + response.toString());
@@ -288,13 +299,13 @@ public class WikiMediatorServer {
             }
         }
 
+        // TODO: don't know if I need to close the socket here...? It might close itself when the thread closes
         cSocket.close();
 
         System.out.println("Leaving thread.");
 
         writer.flush();
         reader.close();
-        cSocket.close();
         activeClients--;
     }
 
