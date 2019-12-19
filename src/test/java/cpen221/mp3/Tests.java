@@ -1,14 +1,17 @@
 package cpen221.mp3;
 
+import com.google.gson.JsonObject;
 import cpen221.mp3.cache.Cache;
 import cpen221.mp3.cache.NotPresentException;
 import cpen221.mp3.cache.StringCacheable;
+import cpen221.mp3.server.WikiClient;
 import cpen221.mp3.server.WikiMediatorServer;
 import cpen221.mp3.wikimediator.WikiMediator;
 import fastily.jwiki.core.Wiki;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -347,12 +350,71 @@ public class Tests {
         Assert.assertTrue(!thisCache.touch("g"));
     }
 
+    @Test
     public void serverTest() {
-        WikiMediatorServer wikiServer = new WikiMediatorServer(3, 1);
+        //
+        WikiMediatorServer wikiServer = new WikiMediatorServer(3, 3);
+        try{
+            WikiClient bill = new WikiClient("localhost", 555);
+            WikiClient angela = new WikiClient("localhost", 555);
+            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
+            angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
 
+            JsonObject replyToAngela = angela.getReply();
+            System.out.println("Reply to angela: " + replyToAngela.toString());
+
+            angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
+                    "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
+
+            JsonObject replyToBill = bill.getReply();
+
+            replyToAngela = angela.getReply();
+            System.out.println("Both clients: " + replyToBill.toString() + "\n" + replyToAngela.toString());
+
+            bill.close();
+            angela.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
+    @Test
+    public void serverTest2() {
+        new WikiMediatorServer(236, 3);
+        try {
+            WikiClient bill = new WikiClient("localhost", 236);
+            // getConnectedPages : pageTitle hops
+            bill.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", pageTitle: \"Barack Obama\", hops: \"2\", timeout: \"4\"}");
+
+            // simplesearch : query, limit
+            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", pageTitle: \"wikiMediator\", limit: \"3\", timeout: \"2\"}");
+
+            // getPage : pageTitle
+            for (int i = 0; i < 2; i++) {
+                bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", pageTitle: \"wikiMediator\", limit: \"3\", timeout: \"2\"}");
+            }
+
+            // peakLoad30s
+            bill.sendRequest("{id: \"localhost\", type: \"peakLoad30s\"}");
+
+            // trending : limit
+            bill.sendRequest("{id: \"localhost\", type: \"trending\", limit: \"3\"}");
+
+            // zeitgeist : limit
+
+            JsonObject reply = bill.getReply();
+
+            System.out.println("Reply: " + reply.toString());
+
+            bill.close();
+
+        } catch(IOException ioe) {
+            ioe.printStackTrace();
+        }
+
+    }
 
 
 }

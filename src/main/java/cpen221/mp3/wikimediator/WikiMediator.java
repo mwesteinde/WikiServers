@@ -1,7 +1,6 @@
 package cpen221.mp3.wikimediator;
 
 import cpen221.mp3.cache.Cache;
-import cpen221.mp3.cache.Cacheable;
 import cpen221.mp3.cache.NotPresentException;
 import cpen221.mp3.cache.StringCacheable;
 import fastily.jwiki.core.Wiki;

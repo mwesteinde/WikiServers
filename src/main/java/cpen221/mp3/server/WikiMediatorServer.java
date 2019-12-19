@@ -72,14 +72,11 @@ public class WikiMediatorServer {
             System.out.println("Running");
 
             // create socket and connect client
-
             Boolean listening = true;
 
             while (listening) {
                 System.out.println("Thread started");
-
                 Socket clientSocket = serverSocket.accept();
-
                 Thread wikiClientHandler = new Thread(new Runnable() {
                     public void run() {
                         try {
@@ -138,15 +135,16 @@ public class WikiMediatorServer {
             // ZEITGEIST -- int limit
             case "zeitgeist":
                 System.out.println("zeitgeist Request");
-
                 zeitgeistRequest(inputQuery, response);
                 break;
             // TRENDING -- int limit
             case "trending":
                 System.out.println("trending Request");
-
                 trendingRequest(inputQuery, response);
                 break;
+            case "peakLoad30s":
+                System.out.println("peakLoad30s request");
+                peakLoad30sRequest(inputQuery, response);
             default:
                 throw new IOException();
         }
@@ -189,9 +187,14 @@ public class WikiMediatorServer {
 
     private void zeitgeistRequest(JsonObject inputQuery, JsonObject response) {
         List responseList = wikiM.zeitgeist(inputQuery.get("limit").getAsInt());
-        String stringResponse = String.join(",", responseList);
+        String stringResponse = responseList.toString();
         response.addProperty("response", stringResponse);
 
+    }
+
+    private void peakLoad30sRequest(JsonObject inputQuery, JsonObject response) {
+        Integer peakLoad = wikiM.peakLoad30s();
+        response.addProperty("response", peakLoad);
     }
 
     private void wikiServerThread(Socket cSocket) throws IOException {
@@ -288,6 +291,7 @@ public class WikiMediatorServer {
             }
         }
 
+        //TODO:
         cSocket.close();
 
         System.out.println("Leaving thread.");

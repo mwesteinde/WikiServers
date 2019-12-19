@@ -11,11 +11,13 @@ public class WikiClient {
     private Socket socket;
     private BufferedReader reader;
     private  PrintWriter writer;
+    private String hostName;
 
     public WikiClient(String hostname, int port) throws IOException {
         socket = new Socket(hostname, port);
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+        hostName = hostname;
     }
 
     public void sendRequest(String s) throws IOException {
@@ -48,15 +50,29 @@ public class WikiClient {
         socket.close();
     }
 
+
     public static void main(String[] args) {
         try{
-            WikiClient bill = new WikiClient("localhost", 555);
+//            WikiClient bill = new WikiClient("localhost", 555);
+            WikiClient angela = new WikiClient("localhost", 555);
+//            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
+            angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
 
-            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
+            JsonObject replyToAngela = angela.getReply();
+            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
 
-            JsonObject jObj = bill.getReply();
-            System.out.println(jObj.toString());
-            bill.close();
+            angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
+                    "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
+//            JsonObject replyToBill = bill.getReply();
+//           JsonObject firstReplyToAngela = angela.getReply();
+//            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
+
+            replyToAngela = angela.getReply();
+//            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
+
+            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
+//            bill.close();
+            angela.close();
         }
         catch (IOException e) {
             e.printStackTrace();
