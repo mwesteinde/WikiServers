@@ -211,7 +211,6 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     public List<String> trending(int limit) {
         call("basicRequest");
 
-
         if (limit == 0) {
             return new ArrayList<>();
         }
@@ -243,7 +242,6 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public int peakLoad30s() {
         call("basicRequest");
-
         return callCache.getMaxCached();
     }
 

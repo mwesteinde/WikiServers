@@ -28,7 +28,7 @@ public class WikiMediatorServer {
     private int activeClients = 0;
     private ServerSocket serverSocket;
 
-    private final String timeoutReply ="{status: \"failed\", response: \"Operation timed out.\"}";
+    private final String timeoutReply = "{status: \"failed\", response: \"Operation timed out.\"}";
 
     // TODO: make this capable of handling multiple clients at once
 
@@ -115,86 +115,98 @@ public class WikiMediatorServer {
         response.addProperty("id", id);
         response.addProperty("status", "pending");
 
-        // SIMPLE SEARCH
-        switch (type) {
-            case "simpleSearch":
-                System.out.println("simpleSearch Request");
-                simpleSearchRequest(inputQuery, response);
-                break;
-            // GETPAGE
-            case "getPage":
-                System.out.println("getPage Request");
-                getPageRequest(inputQuery, response);
-                break;
-            // GETCONNECTEDPAGES -- String pageTitle, int hops
-            case "getConnectedPages":
-                System.out.println("getConnectedPages Request");
-
-                getConnectedPagesRequest(inputQuery, response);
-                break;
-            // ZEITGEIST -- int limit
-            case "zeitgeist":
-                System.out.println("zeitgeist Request");
-                zeitgeistRequest(inputQuery, response);
-                break;
-            // TRENDING -- int limit
-            case "trending":
-                System.out.println("trending Request");
-                trendingRequest(inputQuery, response);
-                break;
-            case "peakLoad30s":
-                System.out.println("peakLoad30s request");
-                peakLoad30sRequest(inputQuery, response);
-            default:
-                throw new IOException();
+        try {
+            switch (type) {
+                case "simpleSearch":
+                    System.out.println("simpleSearch Request");
+                    simpleSearchRequest(inputQuery, response);
+                    break;
+                // GETPAGE
+                case "getPage":
+                    System.out.println("getPage Request");
+                    getPageRequest(inputQuery, response);
+                    break;
+                // GETCONNECTEDPAGES -- String pageTitle, int hops
+                case "getConnectedPages":
+                    System.out.println("getConnectedPages Request");
+                    getConnectedPagesRequest(inputQuery, response);
+                    break;
+                // ZEITGEIST -- int limit
+                case "zeitgeist":
+                    System.out.println("zeitgeist Request");
+                    zeitgeistRequest(inputQuery, response);
+                    break;
+                // TRENDING -- int limit
+                case "trending":
+                    System.out.println("trending Request");
+                    trendingRequest(inputQuery, response);
+                    break;
+                case "peakLoad30s":
+                    System.out.println("peakLoad30s request");
+                    peakLoad30sRequest(inputQuery, response);
+                default:
+                    response.remove("status");
+                    response.addProperty("status", "failed");
+                    throw new IOException();
+            }
+            response.remove("status");
+            response.addProperty("status", "success");
+        } catch (InterruptedIOException e) {
+            e.printStackTrace();
         }
-        response.remove("status");
-        response.addProperty("status", "success");
-
     }
 
+    /*
+    inputs: query (string), limit (int)
+    returns: String list
+    */
     private void simpleSearchRequest(JsonObject inputQuery, JsonObject response) {
-        // getting information to use wikimediator
-        String query = inputQuery.get("query").getAsString();
-        String limit = inputQuery.get("limit").getAsString();
-
-        // add search results
         List responseList = wikiM.simpleSearch(inputQuery.get("query").getAsString(), inputQuery.get("limit").getAsInt());
-        String stringResponse = String.join(",", responseList);
-        response.addProperty("response", stringResponse);
+        response.addProperty("response", responseList.toString());
     }
 
+    /*
+    inputs: pageTitle (string)
+    returns String
+    */
     private void getPageRequest(JsonObject inputQuery, JsonObject response) {
-
-        String responseString = wikiM.getPage(inputQuery.get("pageTitle").getAsString());
-        response.addProperty("response", responseString);
-
+        response.addProperty("response", wikiM.getPage(inputQuery.get("pageTitle").getAsString()));
     }
 
+    /*
+    inputs: pageTitle (string), hops (int)
+    returns: String list
+    */
     private void getConnectedPagesRequest(JsonObject inputQuery, JsonObject response) {
-        List responseList = wikiM.getConnectedPages(inputQuery.get("query").getAsString(), inputQuery.get("hops").getAsInt());
-        String stringResponse = String.join(",", responseList);
+        String stringResponse = wikiM.getConnectedPages(inputQuery.get("pageTitle").getAsString(), inputQuery.get("hops").getAsInt()).toString();
         response.addProperty("response", stringResponse);
-
     }
 
+    /*
+     * inputs: limit (int)
+     * returns: String list
+     * */
     private void trendingRequest(JsonObject inputQuery, JsonObject response) {
-        List responseList = wikiM.trending(inputQuery.get("limit").getAsInt());
-        String stringResponse = String.join(",", responseList);
-        response.addProperty("response", stringResponse);
-
+        response.addProperty("response", wikiM.trending(inputQuery.get("limit").getAsInt()).toString());
     }
 
+    /*
+     * inputs: limit (int)
+     * returns: string list
+     */
     private void zeitgeistRequest(JsonObject inputQuery, JsonObject response) {
-        List responseList = wikiM.zeitgeist(inputQuery.get("limit").getAsInt());
-        String stringResponse = responseList.toString();
-        response.addProperty("response", stringResponse);
+//        List responseList = wikiM.zeitgeist(inputQuery.get("limit").getAsInt());
+//        String stringResponse = responseList.toString();
+        response.addProperty("response", wikiM.zeitgeist(inputQuery.get("limit").getAsInt()).toString());
 
     }
 
+    /*
+     * input: nothing
+     * returns: int
+     */
     private void peakLoad30sRequest(JsonObject inputQuery, JsonObject response) {
-        Integer peakLoad = wikiM.peakLoad30s();
-        response.addProperty("response", peakLoad);
+        response.addProperty("response", wikiM.peakLoad30s());
     }
 
     private void wikiServerThread(Socket cSocket) throws IOException {
@@ -221,13 +233,12 @@ public class WikiMediatorServer {
             System.out.println("element created");
 
             JsonObject response = new JsonObject();
-            response.addProperty("status", "pending");
 
             if (json.getAsJsonObject() != null) {
                 JsonObject inputQuery = json.getAsJsonObject();
                 System.out.println("About to process request");
 
-
+                // for timeout thread race
                 AtomicInteger winner = new AtomicInteger(0);
                 //THREAD
                 Thread process = new Thread(new Runnable() {
@@ -248,7 +259,8 @@ public class WikiMediatorServer {
                     public void run() {
                         try {
                             Thread.sleep(timeout.getAsInt() * 1000);
-                        } catch (InterruptedException ignored) { }
+                        } catch (InterruptedException ignored) {
+                        }
                         winner.compareAndSet(0, 2);
                     }
                 });
@@ -265,13 +277,16 @@ public class WikiMediatorServer {
                         e.printStackTrace();
                     }
                 }
-                timer.interrupt();
-                process.interrupt();
 
                 int resultOfRace = winner.get();
                 System.out.println(resultOfRace);
 
+                timer.interrupt();
+                process.interrupt();
+
                 if (resultOfRace == 1) {
+                    response.remove("status");
+                    response.addProperty("status", "success");
                     System.out.println("Parsed and ready: " + response.toString());
                     writer.println(response.toString());
                     System.out.println("sent: " + response.toString());
@@ -291,7 +306,6 @@ public class WikiMediatorServer {
             }
         }
 
-        //TODO:
         cSocket.close();
 
         System.out.println("Leaving thread.");

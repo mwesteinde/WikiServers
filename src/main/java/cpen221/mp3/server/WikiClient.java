@@ -52,30 +52,80 @@ public class WikiClient {
 
 
     public static void main(String[] args) {
-        try{
-//            WikiClient bill = new WikiClient("localhost", 555);
-            WikiClient angela = new WikiClient("localhost", 555);
-//            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
-            angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
+//        try{
+////            WikiClient bill = new WikiClient("localhost", 555);
+//            WikiClient angela = new WikiClient("localhost", 555);
+////            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
+//            angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
+//
+//            JsonObject replyToAngela = angela.getReply();
+//            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
+//
+//            angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
+//                    "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
+////            JsonObject replyToBill = bill.getReply();
+////           JsonObject firstReplyToAngela = angela.getReply();
+////            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
+//
+//            replyToAngela = angela.getReply();
+////            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
+//
+//            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
+////            bill.close();
+//            angela.close();
+//        }
+//        catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
-            JsonObject replyToAngela = angela.getReply();
-            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
 
-            angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
-                    "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
-//            JsonObject replyToBill = bill.getReply();
-//           JsonObject firstReplyToAngela = angela.getReply();
-//            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
 
-            replyToAngela = angela.getReply();
-//            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
+        try {
+            WikiClient bill = new WikiClient("localhost", 555);
+            JsonObject reply;
+            // getConnectedPages : pageTitle hops -- works - timeout
+            bill.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", pageTitle: \"Barack Obama\", hops: \"2\", timeout: \"4\"}");
 
-            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
-//            bill.close();
-            angela.close();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
+            reply = bill.getReply();
+            System.out.println("Reply: " + reply.toString());
+//
+            // simplesearch : query, limit -- works
+            System.out.println("Simple search: ");
+            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"wikiMediator\", limit: \"3\", timeout: \"2\"}");
+//
+            reply = bill.getReply();
+            System.out.println("Reply: " + reply.toString());
+
+            System.out.println("pageTitle:");
+            // getPage : pageTitle -- doesn't work
+            for (int i = 0; i < 2; i++) {
+                bill.sendRequest("{id: \"localhost\", type: \"getPage\", pageTitle: \"hello\",timeout: \"2\"}");
+                System.out.println("getPage: " + bill.getReply());
+            }
+
+            System.out.println("peakLoad:");
+            // TODO: fix status update...
+            // peakLoad30s -- working
+            bill.sendRequest("{id: \"localhost\", type: \"peakLoad30s\"}");
+            reply = bill.getReply();
+            System.out.println("Reply: " + reply.toString());
+
+            // trending : limit
+            bill.sendRequest("{id: \"localhost\", type: \"trending\", limit: \"3\"}");
+            reply = bill.getReply();
+            System.out.println("Reply: " + reply.toString());
+
+            // zeitgeist : limit
+            System.out.println("Zeitgeist:");
+
+            bill.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}");
+            reply = bill.getReply();
+            System.out.println("Reply: " + reply.toString());
+
+            bill.close();
+
+        } catch(IOException ioe) {
+            ioe.printStackTrace();
         }
     }
 
