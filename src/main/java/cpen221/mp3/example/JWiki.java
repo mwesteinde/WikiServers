@@ -17,11 +17,12 @@ public class JWiki {
     public static void main(String[] args) {
         Wiki wiki = new Wiki("en.wikipedia.org");
         wiki.enableLogging(false);
-        String pageTitle = "Barack Obama";
-//        System.out.println(wiki.getPageText("Main Page"));
-//        System.out.println(wiki.getCategoriesOnPage(pageTitle));
-//        System.out.println(wiki.getLinksOnPage(pageTitle));
-//        System.out.println(wiki.search("Hello", 10));
+        String pageTitle = "Elvis Presley";
+        System.out.println(wiki.getPageText("Main Page"));
+        System.out.println(wiki.getCategoriesOnPage(pageTitle));
+        List<String> list = wiki.getCategoriesOnPage(pageTitle);
+        System.out.println(wiki.getLinksOnPage(pageTitle));
+        System.out.println(wiki.search("Hello", 10));
         System.out.println(wiki.search(pageTitle, 5));
         System.out.println(wiki.search(pageTitle, 2));
 

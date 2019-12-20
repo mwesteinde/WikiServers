@@ -169,6 +169,7 @@ public class Tests {
         for (int i = 0 ; i < 6; i++) {
             wikiM.getPage("UBC");
         }
+        Assert.assertTrue(wikiM.checkRep());
 
         ArrayList<String> expected = new ArrayList<>();
         expected.add("UBC");
@@ -309,7 +310,7 @@ public class Tests {
     }
 
     @Test
-    public void cacheUpdateTest() throws InterruptedException {
+    public void cacheUpdateTest() throws NotPresentException, InterruptedException {
         Cache thisCache = new Cache(7,1000);
 
         thisCache.put(sc1);
@@ -324,13 +325,17 @@ public class Tests {
         Thread.sleep(1);
         thisCache.put(sc6);
 
+        StringCacheable changed = new StringCacheable("a", "sd");
 
-        Assert.assertTrue(thisCache.update(sc1));
+
+        Assert.assertTrue(thisCache.update(changed));
         Assert.assertTrue(!thisCache.update(sc7));
+        Assert.assertEquals(thisCache.get("a"), changed);
+
     }
 
     @Test
-    public void cacheTouchTest() throws InterruptedException{
+    public void cacheTouchTest() throws NotPresentException, InterruptedException{
         Cache thisCache = new Cache(7,1000);
 
         thisCache.put(sc1);
@@ -348,6 +353,7 @@ public class Tests {
 
         Assert.assertTrue(thisCache.touch("a"));
         Assert.assertTrue(!thisCache.touch("g"));
+        Assert.assertEquals(thisCache.get("a"), sc1);
     }
 
     @Test
@@ -355,24 +361,24 @@ public class Tests {
         //
         WikiMediatorServer wikiServer = new WikiMediatorServer(3, 3);
         try{
-            WikiClient bill = new WikiClient("localhost", 555);
-            WikiClient angela = new WikiClient("localhost", 555);
+            WikiClient bill = new WikiClient("localhost", 3);
+            //WikiClient angela = new WikiClient("localhost", 555);
             bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
-            angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
+            //angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
 
-            JsonObject replyToAngela = angela.getReply();
-            System.out.println("Reply to angela: " + replyToAngela.toString());
+           // JsonObject replyToAngela = angela.getReply();
+            //System.out.println("Reply to angela: " + replyToAngela.toString());
 
-            angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
-                    "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
+            //angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
+             //       "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
 
             JsonObject replyToBill = bill.getReply();
 
-            replyToAngela = angela.getReply();
-            System.out.println("Both clients: " + replyToBill.toString() + "\n" + replyToAngela.toString());
+            //replyToAngela = angela.getReply();
+            System.out.println("Both clients: " + replyToBill.toString() + "\n"  /**replyToAngela.toString()*/);
 
             bill.close();
-            angela.close();
+            //angela.close();
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -413,6 +419,51 @@ public class Tests {
         } catch(IOException ioe) {
             ioe.printStackTrace();
         }
+
+    }
+
+    @Test
+    public void getPath() {
+        WikiMediator wikiM = new WikiMediator();
+        Wiki wiki = new Wiki("en.wikipedia.org");
+        String startPage = "Nhlanhla Nene";
+        String stopPage = "Lucas Musculus";
+
+        List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
+        for (int i = 0; i < wikiMConnections.size() - 1; i++) {
+            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i+1)));
+        }
+        Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
+
+    }
+
+    @Test
+    public void getPath2() {
+        WikiMediator wikiM = new WikiMediator();
+        Wiki wiki = new Wiki("en.wikipedia.org");
+        String startPage = "Persig Gunungkidul";
+        String stopPage = "CF Peralada";
+
+        List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
+        for (int i = 0; i < wikiMConnections.size() - 1; i++) {
+            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i+1)));
+        }
+        Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
+
+    }
+
+    @Test
+    public void getPath3() {
+        WikiMediator wikiM = new WikiMediator();
+        Wiki wiki = new Wiki("en.wikipedia.org");
+        String startPage = "M. G. Ramachandran's unrealized projects";
+        String stopPage = "Bethany England";
+
+        List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
+        for (int i = 0; i < wikiMConnections.size() - 1; i++) {
+            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i+1)));
+        }
+        Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
 
     }
 

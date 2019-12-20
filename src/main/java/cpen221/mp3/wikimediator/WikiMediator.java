@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-//TODO Mykal: Implement cache in wikimediator and write tests by December 17th, implement task 3, do lab 9 for jokes, more tests on cache to 95% coverage, Task 3 95% coverage
+//TODO Mykal: Implement cache in wikimediator and write tests by December 17th, implement task 3, do lab 9 for jokes, Task 3 95% coverage
 //TODO Bridget: Implement task 2, more tests on wikimediator to 95% coverage. Task 2 95% coverage tests
 
 /**
@@ -182,7 +182,6 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> zeitgeist(int limit) {
         call("basicRequest");
-        //TODO: use cache
 
         TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
 
@@ -276,7 +275,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
 
             callCache.put(new MethodCall(callType));
 
-        TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
+            this.qTree = new TreeSet<>(this.qMap.values());
     }
 
     // 3A
@@ -290,8 +289,84 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * returns an empty list if one of the pages does not exist or the pages cannot be linked.
      */
     public List<String> getPath(String startPage, String stopPage) {
+        List <String> path = new ArrayList<>();
+        call("getPath");
+        List<String> path1 = pathToEarth(startPage);
+        List<String> path2 = pathToEarth(stopPage);
+        path.add(startPage);
+        for (int i = 0; i < path1.size(); i++) {
+            path.add(path1.get(i));
+        }
+        path.add("Earth");
+        for (int i = path2.size() - 1; i >= 0; i--) {
+            path.add(path2.get(i));
+        }
+        path.add(stopPage);
 
-        return null;
+        return path;
+    }
+
+    private List<String> pathToEarth(String startPage) {
+        List<String> path = new ArrayList<>();
+        List<String> links = wiki.getLinksOnPage(startPage);
+        while (true) {
+            String next = findBestLink(links, path);
+            if (next.equals("Earth") || (next.equals("earth"))) {
+                break;
+            } else {
+                path.add(next);
+                links = wiki.getLinksOnPage(next);
+            }
+        }
+
+        return path;
+    }
+
+    private String findBestLink(List<String> links, List<String> path) {
+        String best = "b";
+        String c = "countries";
+
+        Map<String, Integer> map = new HashMap<>();
+        if (links.contains("Earth")) {
+            return "Earth";
+        }
+        if (links.contains("earth")) {
+            return "earth";
+        }
+        for (String i: links) {
+            if (wiki.getCategoriesOnPage(i).contains("Category:Continents")) {
+                return i;
+            }
+        }
+        for (String i: links) {
+            List <String> categories = wiki.getCategoriesOnPage(i);
+            if (categories.contains("Category:Countries in South America") ||
+                    categories.contains("Category:Countries in Europe") ||
+                    categories.contains("Category:Countries in North America") ||
+                    categories.contains("Category:Countries in Africa") ||
+                    categories.contains("Category:Countries in Latin America") ||
+                    categories.contains("Category:Countries in Oceania") ||
+                    categories.contains("Category:Countries in Australasia") ||
+                    categories.contains("Category:Countries in Asia")) {
+                return i;
+            }
+            }
+        for (String i: links) {
+            if (wiki.getPageText(i).contains("is a city")) {
+                return i;
+            }
+        }
+        for (String i: links) {
+            if (wiki.getCategoriesOnPage(i).contains("Category:Living People")) {
+                return i;
+            }
+        }
+        for (String i: links) {
+            if (!path.contains(i)) {
+                return i;
+            }
+        }
+        return best;
     }
 
     // 3B
