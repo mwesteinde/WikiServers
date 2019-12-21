@@ -1,5 +1,13 @@
 package cpen221.mp3.cache;
 
+import com.google.gson.JsonObject;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -209,6 +217,26 @@ public class Cache<T extends Cacheable> {
      */
     public int getMaxCached() {
         return maxCached;
+    }
+
+    public synchronized void writeToLocal() {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+
+            Iterator<Map.Entry<T, Long>> itr = cache.entrySet().iterator();
+            JsonObject json = new JsonObject();
+            while (itr.hasNext()) {
+                Map.Entry<T, Long> now = (Map.Entry<T, Long>) itr;
+                Long timestamp = now.getValue();
+                StringCacheable query = (StringCacheable) now.getKey();
+                String input = query.id();
+                json.addProperty("object", input);
+                json.addProperty("timestamp", timestamp);
+                writer.write(json.toString());
+            }
+        } catch (IOException e) {
+        System.out.print("Exception thrown creating filewriter");
+    }
     }
 
 }

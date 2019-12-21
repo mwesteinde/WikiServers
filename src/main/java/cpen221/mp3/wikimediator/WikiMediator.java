@@ -1,10 +1,14 @@
 package cpen221.mp3.wikimediator;
 
+import com.google.gson.JsonObject;
 import cpen221.mp3.cache.Cache;
 import cpen221.mp3.cache.NotPresentException;
 import cpen221.mp3.cache.StringCacheable;
 import fastily.jwiki.core.Wiki;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -83,6 +87,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> simpleSearch(String query, int limit) {
         call("search");
+        writeToLocal("simpleSearch", query);
         try {
             if (query.equals("")) {
                 throw new NullPointerException();
@@ -107,6 +112,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * returns an empty string otherwise.
      */
     public String getPage(String pageTitle) {
+        writeToLocal("getPage", pageTitle);
         try {
             call("search");
             queried(pageTitle);
@@ -140,6 +146,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> getConnectedPages(String pageTitle, int hops) {
         call("basicRequest");
+        writeToLocal("getConnectedPages", pageTitle);
 
         if (!wiki.exists(pageTitle)) {
             return new ArrayList<>();
@@ -182,6 +189,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> zeitgeist(int limit) {
         call("basicRequest");
+        writeToLocal("zeitgeist", "null");
 
         TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
 
@@ -210,7 +218,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> trending(int limit) {
         call("basicRequest");
-
+        writeToLocal("trending", "null");
         if (limit == 0) {
             return new ArrayList<>();
         }
@@ -242,6 +250,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public int peakLoad30s() {
         call("basicRequest");
+        writeToLocal("peakLoad30s","null");
         return callCache.getMaxCached();
     }
 
@@ -289,97 +298,69 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     public List<String> getPath(String startPage, String stopPage) {
         List <String> path = new ArrayList<>();
         call("getPath");
-        List<String> path1 = pathToEarth(startPage);
-        List<String> path2 = pathToEarth(stopPage);
+        if (startPage.equals(stopPage)) {
+            path.add(startPage);
+            return path;
+        }
         path.add(startPage);
-        for (int i = 0; i < path1.size(); i++) {
-            path.add(path1.get(i));
-        }
-        path.add("Earth");
-        for (int i = path2.size() - 1; i >= 0; i--) {
-            path.add(path2.get(i));
-        }
-        path.add(stopPage);
-
-        return path;
-    }
-
-    private List<String> pathToEarth(String startPage) {
-        List<String> path = new ArrayList<>();
-        List<String> links = wiki.getLinksOnPage(startPage);
+        String next = startPage;
         while (true) {
-            String next = findBestLink(links, path);
-            if (next.equals("Earth") || (next.equals("earth"))) {
-                break;
-            } else {
+            next = findBestLink(wiki.getLinksOnPage(next), path, stopPage);
+            if (next.equals(stopPage)) {
                 path.add(next);
-                links = wiki.getLinksOnPage(next);
+                break;
             }
         }
 
         return path;
     }
 
-    private String findBestLink(List<String> links, List<String> path) {
-        String best = "b";
-        String c = "countries";
 
-        Map<String, Integer> map = new HashMap<>();
-        if (links.contains("Earth")) {
-            return "Earth";
-        }
-        if (links.contains("earth")) {
-            return "earth";
-        }
+    private String findBestLink(List<String> links, List<String> path, String endPage) {
+        String best;
+        Map <String, Integer> map = new HashMap<>();
+
+
         for (String i: links) {
-            if (wiki.getCategoriesOnPage(i).contains("Category:Continents")) {
+            if (i.equals(endPage)) {
                 return i;
             }
+            int val = getValue(i, endPage);
+            map.put(i, val);
         }
-        for (String i: links) {
-            List <String> categories = wiki.getCategoriesOnPage(i);
-            if (categories.contains("Category:Countries in South America") ||
-                    categories.contains("Category:Countries in Europe") ||
-                    categories.contains("Category:Countries in North America") ||
-                    categories.contains("Category:Countries in Africa") ||
-                    categories.contains("Category:Countries in Latin America") ||
-                    categories.contains("Category:Countries in Oceania") ||
-                    categories.contains("Category:Countries in Australasia") ||
-                    categories.contains("Category:Countries in Asia")) {
-                return i;
-            }
-            }
-        for (String i: links) {
-            if (wiki.getPageText(i).contains("is a city")) {
-                return i;
-            }
-        }
-        for (String i: links) {
-            if (wiki.getCategoriesOnPage(i).contains("Category:Living People")) {
-                return i;
-            }
-        }
-        for (String i: links) {
-            if (!path.contains(i)) {
-                return i;
-            }
-        }
+
+        best = Collections.max(map.entrySet(), (entry1, entry2) -> entry1.getValue() - entry2.getValue()).getKey();
+
         return best;
     }
 
-    // 3B
-    /**
-     * Gets a list results from a specified query.
-     *
-     * @param query A specified query, cannot be empty.
-     * @return A list of results that correspond with the specified query. An empty list
-     * if no meaningful results are found. Leads to a failed operation when used over
-     * the network.
-     * @throws InvalidQueryException if the input query cannot be parsed.
-     */
-    public List<String> executeQuery(String query) throws InvalidQueryException {
-        return null;
+    private int getValue(String link, String endPage) {
+        int value = 0;
+
+        String text = wiki.getPageText(endPage);
+
+
+        return value;
     }
+
+   private synchronized void writeToLocal(String method, String pageTitle) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage", true));
+
+            JsonObject json = new JsonObject();
+            Long timestamp = System.currentTimeMillis();
+
+            json.addProperty("query", pageTitle);
+            json.addProperty("method", method);
+            json.addProperty("timestamp", timestamp);
+            writer.write(json.toString());
+            writer.flush();
+        } catch (IOException e) {
+            System.out.print("Exception thrown creating filewriter");
+        }
+    }
+
+
 
     /**
      * Checks the representation invariant.

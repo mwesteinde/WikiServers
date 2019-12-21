@@ -106,6 +106,10 @@ public class Tests {
         for (int i = 0 ; i < 4; i++) {
             wikiM.simpleSearch("zeitgeist", 3);
         }
+        for (int i = 0 ; i < 2; i++) {
+            wikiM.getConnectedPages("Barack Obama", 1);
+        }
+
 
         ArrayList<String> expected = new ArrayList<>();
         expected.add("zeitgeist");
@@ -113,11 +117,13 @@ public class Tests {
         List actual2 = wikiM.zeitgeist(4);
         ArrayList<String> expected2 = new ArrayList<>();
         expected2.add("zeitgeist");
-        expected2.add("UBC");
         expected2.add("hello");
+        expected2.add("UBC");
+
 
 
         Assert.assertEquals(expected, actual);
+        Assert.assertEquals(expected2, actual2);
 
     }
 
@@ -144,6 +150,41 @@ public class Tests {
         expected.add("zeitgeist");
 
         Assert.assertEquals(expected, wikiM.trending(3));
+
+        Assert.assertTrue(wikiM.trending(0).isEmpty());
+    }
+
+    @Test
+    public void trendingTestRepeated() throws InterruptedException {
+        WikiMediator wikiM = new WikiMediator();
+
+        for(int i = 0; i < 3; i++) {
+            wikiM.getPage("hello");
+        }
+        for (int i = 0; i < 1; i++) {
+            wikiM.getPage("UBC");
+        }
+
+        for (int i = 0 ; i < 4; i++) {
+            wikiM.simpleSearch("zeitgeist", 3);
+        }
+
+        Thread.sleep(31*1000);
+
+        for (int i = 0 ; i < 3; i++) {
+            wikiM.simpleSearch("zeitgeist", 3);
+        }
+
+        for (int i = 0 ; i < 4; i++) {
+            wikiM.simpleSearch("Barack Obama", 3);
+        }
+
+
+
+        ArrayList<String> expected = new ArrayList<>();
+        expected.add("Barack Obama");
+
+        Assert.assertEquals(expected, wikiM.trending(1));
 
         Assert.assertTrue(wikiM.trending(0).isEmpty());
     }
