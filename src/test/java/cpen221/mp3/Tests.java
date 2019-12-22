@@ -1,6 +1,6 @@
 package cpen221.mp3;
 
-import com.google.gson.JsonObject;
+
 import cpen221.mp3.cache.Cache;
 import cpen221.mp3.cache.NotPresentException;
 import cpen221.mp3.cache.StringCacheable;
@@ -16,12 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Tests {
-
-    /*
-        You can add your tests here.
-        Remember to import the packages that you need, such
-        as cpen221.mp3.cache.
-     */
 
     @Test public void simpleSearchTest() {
         WikiMediator wikiM = new WikiMediator();
@@ -412,13 +406,13 @@ public class Tests {
     }
 
 
-/**
+
     @Test
     public void getPath() {
         WikiMediator wikiM = new WikiMediator();
         Wiki wiki = new Wiki("en.wikipedia.org");
-        String startPage = "Nhlanhla Nene";
-        String stopPage = "Lucas Musculus";
+        String startPage = "Lucas Musculus";
+        String stopPage = "Koblenz";
 
         List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
         for (int i = 0; i < wikiMConnections.size() - 1; i++) {
@@ -428,12 +422,13 @@ public class Tests {
 
     }
 
+
     @Test
     public void getPath2() {
         WikiMediator wikiM = new WikiMediator();
         Wiki wiki = new Wiki("en.wikipedia.org");
         String startPage = "Persig Gunungkidul";
-        String stopPage = "CF Peralada";
+        String stopPage = "CF Peralada-Girona B";
 
         List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
         for (int i = 0; i < wikiMConnections.size() - 1; i++) {
@@ -447,8 +442,21 @@ public class Tests {
     public void getPath3() {
         WikiMediator wikiM = new WikiMediator();
         Wiki wiki = new Wiki("en.wikipedia.org");
-        String startPage = "M. G. Ramachandran's unrealized projects";
-        String stopPage = "Bethany England";
+        String startPage = "Modular Equipment Transporter";
+        String stopPage = "Awa Tanuki Gassen";
+
+        List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
+
+        Assert.assertTrue(wikiMConnections.isEmpty());
+
+    }
+
+    @Test
+    public void getPath4() {
+        WikiMediator wikiM = new WikiMediator();
+        Wiki wiki = new Wiki("en.wikipedia.org");
+        String startPage = "Modular Equipment Transporter";
+        String stopPage = "Greece";
 
         List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
         for (int i = 0; i < wikiMConnections.size() - 1; i++) {
@@ -457,6 +465,6 @@ public class Tests {
         Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
 
     }
-*/
+
 
 }

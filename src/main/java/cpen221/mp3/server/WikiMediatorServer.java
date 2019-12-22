@@ -30,7 +30,6 @@ public class WikiMediatorServer {
 
     private final String timeoutReply = "{status: \"failed\", response: \"Operation timed out.\"}";
 
-    // TODO: make this capable of handling multiple clients at once
 
     //RI: Each input JSON object has a type and an id. Each output JSON object has an id, status and response.
     //The type is a method that has been implemented in WikiMediator
