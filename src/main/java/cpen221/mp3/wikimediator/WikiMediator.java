@@ -1,14 +1,15 @@
 package cpen221.mp3.wikimediator;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import cpen221.mp3.cache.Cache;
 import cpen221.mp3.cache.NotPresentException;
 import cpen221.mp3.cache.StringCacheable;
 import fastily.jwiki.core.Wiki;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -87,7 +88,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> simpleSearch(String query, int limit) {
         call("search");
-        writeToLocal("simpleSearch", query);
+        writeToLocal("basic", query);
         try {
             if (query.equals("")) {
                 throw new NullPointerException();
@@ -112,7 +113,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * returns an empty string otherwise.
      */
     public String getPage(String pageTitle) {
-        writeToLocal("getPage", pageTitle);
+        writeToLocal("basic", pageTitle);
         try {
             call("search");
             queried(pageTitle);
@@ -192,12 +193,11 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
         writeToLocal("zeitgeist", "null");
 
         TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
-
-        // filters queries within last 30 seconds and gets their string values
-        List<String> commonQueries = qTree.descendingSet().stream()
-                .sorted(Comparator.comparingInt(Query::getNumQueries).reversed())
-                .map(Query::getQuery)
-                .collect(Collectors.toList());
+        List<String> commonQueries = commonQueriesFromFile();
+       // List<String> commonQueries = qTree.descendingSet().stream()
+       //         .sorted(Comparator.comparingInt(Query::getNumQueries).reversed())
+       //         .map(Query::getQuery)
+       //         .collect(Collectors.toList());
 
         if(commonQueries.size() < limit) {
             return commonQueries;
@@ -227,11 +227,13 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
         TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
         Instant now = Instant.now();
 
+        List<String> sortedQueries = getListReturned();
+
         // filters queries within last 30 seconds and gets their string values
-        List<String> sortedQueries = qTree.descendingSet().stream()
-                .filter(q -> q.within30S(now))
-                .map(Query::getQuery)
-                .collect(Collectors.toList());
+        //List<String> sortedQueries = qTree.descendingSet().stream()
+        //        .filter(q -> q.within30S(now))
+        //        .map(Query::getQuery)
+        //        .collect(Collectors.toList());
 
         // returns <= the limit of queries allowed
         if (sortedQueries.size() <= limit) {
@@ -251,7 +253,8 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     public int peakLoad30s() {
         call("basicRequest");
         writeToLocal("peakLoad30s","null");
-        return callCache.getMaxCached();
+        return allMethodsCount30s();
+       // return callCache.getMaxCached();
     }
 
     /* //////////////////////////////////////////////////////////////////////////////// */
@@ -283,6 +286,147 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
             callCache.put(new MethodCall(callType));
 
             this.qTree = new TreeSet<>(this.qMap.values());
+    }
+
+    private synchronized List<String> getListReturned() {
+        List <String> returned = new ArrayList<>();
+        Map <String, Integer> map = new HashMap<>();
+
+        try  {
+            Long now = System.currentTimeMillis();
+            BufferedReader reader = new BufferedReader(new FileReader("local/CacheStorage"));
+            String line = reader.readLine();
+            while (line != null) {
+                JsonObject obj = (JsonObject) JsonParser.parseString(line);
+                if (now - obj.get("timestamp").getAsLong() < 30 * 1000) {
+                    if ((obj.get("method").getAsString()).equals("basic")) {
+                        String query = obj.get("query").getAsString();
+                        if (map.containsKey(query)) {
+                            int val = map.get(query);
+                            map.put(query, val + 1);
+                        } else {
+                            map.put(query, 1);
+                        }
+                    }
+                }
+
+                line = reader.readLine();
+            }
+            List<Map.Entry<String,Integer>> entries = new ArrayList<Map.Entry<String,Integer>>(
+                    map.entrySet());
+            Collections.sort(entries,new Comparator<Map.Entry<String,Integer>>() {
+                        public int compare(Map.Entry<String,Integer> a, Map.Entry<String,Integer> b) {
+                            return Integer.compare(b.getValue(), a.getValue());
+                        }
+                    }
+            );
+            for (Map.Entry<String,Integer> e : entries) {
+                returned.add(e.getKey());
+            }
+
+
+
+        } catch (FileNotFoundException e) {
+
+
+
+        } catch (IOException e1) {
+
+        }
+
+        return returned;
+    }
+
+    private synchronized List<String> commonQueriesFromFile() {
+        List <String> returned = new ArrayList<>();
+        Map <String, Integer> map = new HashMap<>();
+
+        try  {
+            Long now = System.currentTimeMillis();
+            BufferedReader reader = new BufferedReader(new FileReader("local/CacheStorage"));
+            String line = reader.readLine();
+            while (line != null) {
+                JsonObject obj = (JsonObject) JsonParser.parseString(line);
+                if ((obj.get("method").getAsString()).equals("basic")) {
+                    String query = obj.get("query").getAsString();
+                    if (map.containsKey(query)) {
+                        int val = map.get(query);
+                        map.put(query, val + 1);
+                    } else {
+                        map.put(query, 1);
+                    }
+                }
+
+                line = reader.readLine();
+            }
+            List<Map.Entry<String,Integer>> entries = new ArrayList<Map.Entry<String,Integer>>(
+                    map.entrySet());
+            Collections.sort(entries,new Comparator<Map.Entry<String,Integer>>() {
+                        public int compare(Map.Entry<String,Integer> a, Map.Entry<String,Integer> b) {
+                            return Integer.compare(b.getValue(), a.getValue());
+                        }
+                    }
+            );
+            for (Map.Entry<String,Integer> e : entries) {
+                returned.add(e.getKey());
+            }
+
+
+
+        } catch (FileNotFoundException e) {
+
+
+
+        } catch (IOException e1) {
+
+        }
+
+        return returned;
+    }
+
+    private synchronized int allMethodsCount30s() {
+        int count = 0;
+        try  {
+            Long now = System.currentTimeMillis();
+            BufferedReader reader = new BufferedReader(new FileReader("local/CacheStorage"));
+            String line = reader.readLine();
+            while (line != null) {
+                JsonObject obj = (JsonObject) JsonParser.parseString(line);
+                int i = 0;
+                Long l = obj.get("timestamp").getAsLong();
+                if ((now - l) < 30 * 1000) {
+                    count++;
+                }
+                line = reader.readLine();
+            }
+
+
+        } catch (FileNotFoundException e) {
+
+
+
+        } catch (IOException e1) {
+
+        }
+        return count;
+    }
+
+    private synchronized void writeToLocal(String method, String pageTitle) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage", true));
+
+            JsonObject json = new JsonObject();
+            Long timestamp = System.currentTimeMillis();
+
+            json.addProperty("query", pageTitle);
+            json.addProperty("method", method);
+            json.addProperty("timestamp", timestamp);
+            writer.write(json.toString());
+            writer.write("\n");
+            writer.flush();
+        } catch (IOException e) {
+            System.out.print("Exception thrown creating filewriter");
+        }
     }
 
     // 3A
@@ -343,22 +487,6 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
         return value;
     }
 
-   private synchronized void writeToLocal(String method, String pageTitle) {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage", true));
-
-            JsonObject json = new JsonObject();
-            Long timestamp = System.currentTimeMillis();
-
-            json.addProperty("query", pageTitle);
-            json.addProperty("method", method);
-            json.addProperty("timestamp", timestamp);
-            writer.write(json.toString());
-            writer.flush();
-        } catch (IOException e) {
-            System.out.print("Exception thrown creating filewriter");
-        }
-    }
 
 
 

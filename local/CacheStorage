@@ -1,1 +1,11 @@
-{"query":"zeitgeist","method":"simpleSearch","timestamp":1576967540750}{"query":"hello","method":"getPage","timestamp":1576967649504}{"query":"hello","method":"getPage","timestamp":1576967650295}{"query":"hello","method":"getPage","timestamp":1576967652001}{"query":"UBC","method":"getPage","timestamp":1576967662653}{"query":"zeitgeist","method":"simpleSearch","timestamp":1576967663505}{"query":"zeitgeist","method":"simpleSearch","timestamp":1576967663919}{"query":"zeitgeist","method":"simpleSearch","timestamp":1576967664279}{"query":"zeitgeist","method":"simpleSearch","timestamp":1576967664600}
+{"query":"hello","method":"basic","timestamp":1576977028979}
+{"query":"hello","method":"basic","timestamp":1576977029147}
+{"query":"hello","method":"basic","timestamp":1576977029149}
+{"query":"UBC","method":"basic","timestamp":1576977029149}
+{"query":"zeitgeist","method":"basic","timestamp":1576977060303}
+{"query":"zeitgeist","method":"basic","timestamp":1576977060427}
+{"query":"zeitgeist","method":"basic","timestamp":1576977060599}
+{"query":"zeitgeist","method":"basic","timestamp":1576977060728}
+{"query":"null","method":"trending","timestamp":1576977060873}
+{"query":"null","method":"trending","timestamp":1576977060877}
+{"query":"null","method":"trending","timestamp":1576977060881}

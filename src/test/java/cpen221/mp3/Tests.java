@@ -11,7 +11,7 @@ import fastily.jwiki.core.Wiki;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,8 +94,10 @@ public class Tests {
 
 
     @Test
-    public void zeitgeistTest() {
+    public void zeitgeistTest() throws IOException {
         WikiMediator wikiM = new WikiMediator();
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
 
         for(int i = 0; i < 3; i++) {
             wikiM.getPage("hello");
@@ -128,7 +130,9 @@ public class Tests {
     }
 
     @Test
-    public void trendingTest() throws InterruptedException {
+    public void trendingTest() throws InterruptedException, IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
         WikiMediator wikiM = new WikiMediator();
 
         for(int i = 0; i < 3; i++) {
@@ -155,7 +159,9 @@ public class Tests {
     }
 
     @Test
-    public void trendingTestRepeated() throws InterruptedException {
+    public void trendingTestRepeated() throws InterruptedException, IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
         WikiMediator wikiM = new WikiMediator();
 
         for(int i = 0; i < 3; i++) {
@@ -190,7 +196,9 @@ public class Tests {
     }
 
     @Test
-    public void trendingTest2() throws InterruptedException {
+    public void trendingTest2() throws InterruptedException, IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
         WikiMediator wikiM = new WikiMediator();
 
         for (int i = 0 ; i < 3; i++) {
@@ -223,7 +231,7 @@ public class Tests {
     }
 
     @Test
-    public void simpleSearchTest2() {
+    public void simpleSearchTest2() throws IOException {
         WikiMediator wikiM = new WikiMediator();
 
         Wiki wiki = new Wiki("en.wikipedia.org");
@@ -237,8 +245,10 @@ public class Tests {
     }
 
     @Test
-    public void peakLoad30sTest() throws InterruptedException {
+    public void peakLoad30sTest() throws InterruptedException, IOException {
         WikiMediator wikiM = new WikiMediator();
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
 
         for (int i = 0 ; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
@@ -263,8 +273,10 @@ public class Tests {
     }
 
     @Test
-    public void peakLoad30sTestTime() throws InterruptedException {
+    public void peakLoad30sTestTime() throws InterruptedException, IOException {
         WikiMediator wikiM = new WikiMediator();
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
 
         for (int i = 0 ; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
@@ -288,7 +300,9 @@ public class Tests {
 }
 
     @Test
-    public void peakLoad30sTestTime2() throws InterruptedException {
+    public void peakLoad30sTestTime2() throws InterruptedException, IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
         WikiMediator wikiM = new WikiMediator();
 
         for (int i = 0 ; i < 3; i++) {
@@ -397,72 +411,8 @@ public class Tests {
         Assert.assertEquals(thisCache.get("a"), sc1);
     }
 
-    @Test
-    public void serverTest() {
-        //
-        WikiMediatorServer wikiServer = new WikiMediatorServer(3, 3);
-        try{
-            WikiClient bill = new WikiClient("localhost", 3);
-            //WikiClient angela = new WikiClient("localhost", 555);
-            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
-            //angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
 
-           // JsonObject replyToAngela = angela.getReply();
-            //System.out.println("Reply to angela: " + replyToAngela.toString());
-
-            //angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
-             //       "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
-
-            JsonObject replyToBill = bill.getReply();
-
-            //replyToAngela = angela.getReply();
-            System.out.println("Both clients: " + replyToBill.toString() + "\n"  /**replyToAngela.toString()*/);
-
-            bill.close();
-            //angela.close();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    @Test
-    public void serverTest2() {
-        new WikiMediatorServer(236, 3);
-        try {
-            WikiClient bill = new WikiClient("localhost", 236);
-            // getConnectedPages : pageTitle hops
-            bill.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", pageTitle: \"Barack Obama\", hops: \"2\", timeout: \"4\"}");
-
-            // simplesearch : query, limit
-            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", pageTitle: \"wikiMediator\", limit: \"3\", timeout: \"2\"}");
-
-            // getPage : pageTitle
-            for (int i = 0; i < 2; i++) {
-                bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", pageTitle: \"wikiMediator\", limit: \"3\", timeout: \"2\"}");
-            }
-
-            // peakLoad30s
-            bill.sendRequest("{id: \"localhost\", type: \"peakLoad30s\"}");
-
-            // trending : limit
-            bill.sendRequest("{id: \"localhost\", type: \"trending\", limit: \"3\"}");
-
-            // zeitgeist : limit
-
-            JsonObject reply = bill.getReply();
-
-            System.out.println("Reply: " + reply.toString());
-
-            bill.close();
-
-        } catch(IOException ioe) {
-            ioe.printStackTrace();
-        }
-
-    }
-
+/**
     @Test
     public void getPath() {
         WikiMediator wikiM = new WikiMediator();
@@ -507,6 +457,6 @@ public class Tests {
         Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
 
     }
-
+*/
 
 }
