@@ -60,7 +60,7 @@ public class WikiMediatorServer {
             serverSocket = new ServerSocket(this.port);
             serve();
         } catch (IOException e) {
-            System.out.print("Exception thrown creating server socket.");
+            System.out.println("Exception thrown creating server socket.");
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
@@ -69,11 +69,8 @@ public class WikiMediatorServer {
 
     private void serve() {
         try {
-            System.out.println("Running");
-
             // create socket and connect client
             while (true) {
-                System.out.println("Thread started");
                 // waits until one client stops using the server until new client is connected
                 Socket clientSocket = serverSocket.accept();
                 Thread wikiClientHandler = new Thread(new Runnable() {
@@ -110,8 +107,6 @@ public class WikiMediatorServer {
 
     private void processRequest(JsonObject inputQuery, JsonObject response) throws IOException {
         // GETTING ID
-        System.out.println("Processing Request");
-
         String id = inputQuery.get("id").getAsString();
         String type = inputQuery.get("type").getAsString();
 
@@ -121,31 +116,25 @@ public class WikiMediatorServer {
         try {
             switch (type) {
                 case "simpleSearch":
-                    System.out.println("simpleSearch Request");
                     simpleSearchRequest(inputQuery, response);
                     break;
                 // GETPAGE
                 case "getPage":
-                    System.out.println("getPage Request");
                     getPageRequest(inputQuery, response);
                     break;
                 // GETCONNECTEDPAGES -- String pageTitle, int hops
                 case "getConnectedPages":
-                    System.out.println("getConnectedPages Request");
                     getConnectedPagesRequest(inputQuery, response);
                     break;
                 // ZEITGEIST -- int limit
                 case "zeitgeist":
-                    System.out.println("zeitgeist Request");
                     zeitgeistRequest(inputQuery, response);
                     break;
                 // TRENDING -- int limit
                 case "trending":
-                    System.out.println("trending Request");
                     trendingRequest(inputQuery, response);
                     break;
                 case "peakLoad30s":
-                    System.out.println("peakLoad30s request");
                     peakLoad30sRequest(inputQuery, response);
                 default:
                     response.remove("status");
@@ -214,27 +203,22 @@ public class WikiMediatorServer {
 
     private void wikiServerThread(Socket cSocket) throws IOException, InterruptedException {
         activeClients++;
-        System.out.println("New client connected");
 
         PrintWriter writer =
                 new PrintWriter(new OutputStreamWriter(cSocket.getOutputStream()), true);
         BufferedReader reader =
                 new BufferedReader(new InputStreamReader(cSocket.getInputStream()));
 
-        System.out.println("reader and writer created");
         String jsonString;
 
         for (jsonString = reader.readLine(); jsonString != null; jsonString = reader.readLine()) {
-            System.out.println("read line " + jsonString);
             // parsing to json object
             JsonElement json = JsonParser.parseString(jsonString);
-            System.out.println("element created");
 
             JsonObject response = new JsonObject();
 
             if (json.getAsJsonObject() != null) {
                 JsonObject inputQuery = json.getAsJsonObject();
-                System.out.println("About to process request");
 
                 // for timeout thread race
                 AtomicInteger winner = new AtomicInteger(0);
@@ -278,7 +262,6 @@ public class WikiMediatorServer {
                 }
 
                 int resultOfRace = winner.get();
-                System.out.println(resultOfRace);
 
                 // stop both threads
                 timer.interrupt();
@@ -288,9 +271,7 @@ public class WikiMediatorServer {
                 if (resultOfRace == 1) {
                     response.remove("status");
                     response.addProperty("status", "success");
-                    System.out.println("Parsed and ready: " + response.toString());
                     writer.println(response.toString());
-                    System.out.println("sent: " + response.toString());
                 }
                 // if timeout
                 else {
@@ -304,28 +285,15 @@ public class WikiMediatorServer {
                 // no response received
                 response.remove("status");
                 response.addProperty("status", "failed");
-                System.out.println("Failed ready to send: " + response.toString());
                 writer.print(response.toString());
-                System.out.println("sent");
             }
         }
 
         cSocket.close();
 
-        System.out.println("Leaving thread.");
-
         writer.flush();
         reader.close();
         activeClients--;
-    }
-
-    public static void main(String[] args) {
-        try {
-            WikiMediatorServer wikiServer = new WikiMediatorServer(DEFAULT_PORT, 10000);
-            wikiServer.serve();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }
 
