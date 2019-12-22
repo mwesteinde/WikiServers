@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import cpen221.mp3.cache.Cache;
 import cpen221.mp3.cache.NotPresentException;
 import cpen221.mp3.cache.StringCacheable;
-import cpen221.mp3.server.WikiClient;
 import cpen221.mp3.server.WikiMediatorServer;
 import cpen221.mp3.wikimediator.WikiMediator;
 import fastily.jwiki.core.Wiki;
@@ -23,7 +22,8 @@ public class Tests {
         as cpen221.mp3.cache.
      */
 
-    @Test public void simpleSearchTest() {
+    @Test
+    public void simpleSearchTest() {
         WikiMediator wikiM = new WikiMediator();
         Wiki wiki = new Wiki("en.wikipedia.org");
         String query = "UBC";
@@ -97,13 +97,13 @@ public class Tests {
     public void zeitgeistTest() {
         WikiMediator wikiM = new WikiMediator();
 
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             wikiM.getPage("hello");
         }
         for (int i = 0; i < 1; i++) {
             wikiM.getPage("UBC");
         }
-        for (int i = 0 ; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             wikiM.simpleSearch("zeitgeist", 3);
         }
 
@@ -125,16 +125,16 @@ public class Tests {
     public void trendingTest() throws InterruptedException {
         WikiMediator wikiM = new WikiMediator();
 
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             wikiM.getPage("hello");
         }
         for (int i = 0; i < 1; i++) {
             wikiM.getPage("UBC");
         }
 
-        Thread.sleep(31*1000);
+        Thread.sleep(31 * 1000);
 
-        for (int i = 0 ; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             wikiM.simpleSearch("zeitgeist", 3);
         }
 
@@ -152,21 +152,21 @@ public class Tests {
     public void trendingTest2() throws InterruptedException {
         WikiMediator wikiM = new WikiMediator();
 
-        for (int i = 0 ; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
         }
 
-        for (int i = 0 ; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(5*1000);
+        Thread.sleep(5 * 1000);
 
-        for (int i = 0 ; i < 5; i++) {
+        for (int i = 0; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
         }
 
-        for (int i = 0 ; i < 6; i++) {
+        for (int i = 0; i < 6; i++) {
             wikiM.getPage("UBC");
         }
         Assert.assertTrue(wikiM.checkRep());
@@ -199,21 +199,21 @@ public class Tests {
     public void peakLoad30sTest() throws InterruptedException {
         WikiMediator wikiM = new WikiMediator();
 
-        for (int i = 0 ; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
         }
 
-        for (int i = 0 ; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(5*1000);
+        Thread.sleep(5 * 1000);
 
-        for (int i = 0 ; i < 5; i++) {
+        for (int i = 0; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
         }
 
-        for (int i = 0 ; i < 6; i++) {
+        for (int i = 0; i < 6; i++) {
             wikiM.getPage("UBC");
         }
 
@@ -225,46 +225,46 @@ public class Tests {
     public void peakLoad30sTestTime() throws InterruptedException {
         WikiMediator wikiM = new WikiMediator();
 
-        for (int i = 0 ; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
         }
 
-        for (int i = 0 ; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(60*1000);
+        Thread.sleep(60 * 1000);
 
-        for (int i = 0 ; i < 5; i++) {
+        for (int i = 0; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
         }
 
-        for (int i = 0 ; i < 6; i++) {
+        for (int i = 0; i < 6; i++) {
             wikiM.getPage("UBC");
         }
 
         Assert.assertEquals(12, wikiM.peakLoad30s());
-}
+    }
 
     @Test
     public void peakLoad30sTestTime2() throws InterruptedException {
         WikiMediator wikiM = new WikiMediator();
 
-        for (int i = 0 ; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
         }
 
-        for (int i = 0 ; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(31*1000);
+        Thread.sleep(31 * 1000);
 
-        for (int i = 0 ; i < 5; i++) {
+        for (int i = 0; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
         }
 
-        for (int i = 0 ; i < 6; i++) {
+        for (int i = 0; i < 6; i++) {
             wikiM.getPage("UBC");
         }
 
@@ -282,7 +282,7 @@ public class Tests {
 
     @Test(expected = NotPresentException.class)
     public void cacheFullTest() throws NotPresentException, InterruptedException {
-        Cache thisCache = new Cache(5,1000);
+        Cache thisCache = new Cache(5, 1000);
 
         thisCache.put(sc1);
         Thread.sleep(1);
@@ -311,7 +311,7 @@ public class Tests {
 
     @Test
     public void cacheUpdateTest() throws NotPresentException, InterruptedException {
-        Cache thisCache = new Cache(7,1000);
+        Cache thisCache = new Cache(7, 1000);
 
         thisCache.put(sc1);
         Thread.sleep(1);
@@ -335,8 +335,8 @@ public class Tests {
     }
 
     @Test
-    public void cacheTouchTest() throws NotPresentException, InterruptedException{
-        Cache thisCache = new Cache(7,1000);
+    public void cacheTouchTest() throws NotPresentException, InterruptedException {
+        Cache thisCache = new Cache(7, 1000);
 
         thisCache.put(sc1);
         long time = System.currentTimeMillis();
@@ -357,72 +357,6 @@ public class Tests {
     }
 
     @Test
-    public void serverTest() {
-        //
-        WikiMediatorServer wikiServer = new WikiMediatorServer(3, 3);
-        try{
-            WikiClient bill = new WikiClient("localhost", 3);
-            //WikiClient angela = new WikiClient("localhost", 555);
-            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
-            //angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
-
-           // JsonObject replyToAngela = angela.getReply();
-            //System.out.println("Reply to angela: " + replyToAngela.toString());
-
-            //angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
-             //       "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
-
-            JsonObject replyToBill = bill.getReply();
-
-            //replyToAngela = angela.getReply();
-            System.out.println("Both clients: " + replyToBill.toString() + "\n"  /**replyToAngela.toString()*/);
-
-            bill.close();
-            //angela.close();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    @Test
-    public void serverTest2() {
-        new WikiMediatorServer(236, 3);
-        try {
-            WikiClient bill = new WikiClient("localhost", 236);
-            // getConnectedPages : pageTitle hops
-            bill.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", pageTitle: \"Barack Obama\", hops: \"2\", timeout: \"4\"}");
-
-            // simplesearch : query, limit
-            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", pageTitle: \"wikiMediator\", limit: \"3\", timeout: \"2\"}");
-
-            // getPage : pageTitle
-            for (int i = 0; i < 2; i++) {
-                bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", pageTitle: \"wikiMediator\", limit: \"3\", timeout: \"2\"}");
-            }
-
-            // peakLoad30s
-            bill.sendRequest("{id: \"localhost\", type: \"peakLoad30s\"}");
-
-            // trending : limit
-            bill.sendRequest("{id: \"localhost\", type: \"trending\", limit: \"3\"}");
-
-            // zeitgeist : limit
-
-            JsonObject reply = bill.getReply();
-
-            System.out.println("Reply: " + reply.toString());
-
-            bill.close();
-
-        } catch(IOException ioe) {
-            ioe.printStackTrace();
-        }
-
-    }
-
-    @Test
     public void getPath() {
         WikiMediator wikiM = new WikiMediator();
         Wiki wiki = new Wiki("en.wikipedia.org");
@@ -431,7 +365,7 @@ public class Tests {
 
         List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
         for (int i = 0; i < wikiMConnections.size() - 1; i++) {
-            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i+1)));
+            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i + 1)));
         }
         Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
 
@@ -446,7 +380,7 @@ public class Tests {
 
         List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
         for (int i = 0; i < wikiMConnections.size() - 1; i++) {
-            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i+1)));
+            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i + 1)));
         }
         Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
 
@@ -461,7 +395,7 @@ public class Tests {
 
         List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
         for (int i = 0; i < wikiMConnections.size() - 1; i++) {
-            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i+1)));
+            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i + 1)));
         }
         Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
 

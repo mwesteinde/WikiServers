@@ -1,4 +1,4 @@
-package cpen221.mp3.server;
+package cpen221.mp3;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -27,12 +27,11 @@ public class WikiClient {
     }
 
     public JsonObject getReply() throws IOException {
-        System.out.println("getting reply");
         String reply = reader.readLine();
         System.out.println("Reply received: "+reply);
 
         if(reply == null) {
-            throw new IOException("connection terminated unexpectedly");
+            throw new IOException("Connection terminated unexpectedly");
         }
 
         try{
@@ -52,36 +51,34 @@ public class WikiClient {
 
 
     public static void main(String[] args) {
-//        try{
-////            WikiClient bill = new WikiClient("localhost", 555);
-//            WikiClient angela = new WikiClient("localhost", 555);
-////            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
-//            angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
-//
-//            JsonObject replyToAngela = angela.getReply();
-//            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
-//
-//            angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
-//                    "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
-////            JsonObject replyToBill = bill.getReply();
-////           JsonObject firstReplyToAngela = angela.getReply();
-////            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
-//
-//            replyToAngela = angela.getReply();
-////            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
-//
-//            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
-////            bill.close();
-//            angela.close();
-//        }
-//        catch (IOException e) {
-//            e.printStackTrace();
-//        }
+        try {
+//            WikiClient bill = new WikiClient("localhost", 555);
+            WikiClient angela = new WikiClient("localhost", 4949);
+//            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"Barack Obama\", limit: \"12\", timeout: \"10000\"}");
+            angela.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", type: \"getConnectedPages\", hops: \"1000\", timeout: \"2\"}");
 
+            JsonObject replyToAngela = angela.getReply();
+            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
 
+            angela.sendRequest("{id: \"localhost\", type: \"zeitgeist\", limit: \"2\"}\n" +
+                    "{id: \"localhost\", type: \"peakLoad30s\", timeout: \"2\"}");
+//            JsonObject replyToBill = bill.getReply();
+//           JsonObject firstReplyToAngela = angela.getReply();
+//            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
+
+            replyToAngela = angela.getReply();
+//            System.out.println(/*replyToBill.toString() + "\n" +*/ firstReplyToAngela.toString());
+
+            System.out.println(/*replyToBill.toString() + "\n" +*/ replyToAngela.toString());
+//            bill.close();
+            angela.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
 
         try {
-            WikiClient bill = new WikiClient("localhost", 555);
+            WikiClient bill = new WikiClient("localhost", 4949);
             JsonObject reply;
             // getConnectedPages : pageTitle hops -- works - timeout
             bill.sendRequest("{id: \"localhost\", type: \"getConnectedPages\", pageTitle: \"Barack Obama\", hops: \"2\", timeout: \"4\"}");
@@ -127,6 +124,27 @@ public class WikiClient {
         } catch(IOException ioe) {
             ioe.printStackTrace();
         }
+
+//        try {
+//            WikiClient bill = new WikiClient("localhost", 555);
+//            WikiClient jill = new WikiClient(null, 555);
+//            WikiClient phil = new WikiClient(null, 555);
+//
+//            phil.sendRequest("{id: \"localhost\", type: \"getPage\", pageTitle: \"hello\",timeout: \"2\"}");
+//
+//            jill.close();
+//
+//            bill.sendRequest("{id: \"localhost\", type: \"simpleSearch\", query: \"wikiMediator\", limit: \"3\", timeout: \"2\"}");
+//
+//            System.out.println(phil.getReply().toString());
+//            System.out.println(bill.getReply().toString());
+//
+//            phil.close();
+//            jill.close();
+//            bill.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
 }

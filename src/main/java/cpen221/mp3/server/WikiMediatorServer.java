@@ -9,7 +9,6 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -20,13 +19,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class WikiMediatorServer {
 
-    static final String IP_ADDRESS = "197.35.26.96";
-
     private final WikiMediator wikiM = new WikiMediator();
     private int clientLimit;
     private int port;
     private int activeClients = 0;
     private ServerSocket serverSocket;
+    private static final int DEFAULT_PORT = 4949;
 
     private final String timeoutReply = "{status: \"failed\", response: \"Operation timed out.\"}";
 
@@ -49,43 +47,51 @@ public class WikiMediatorServer {
      * Start a server at a given port number, with the ability to process
      * up to n requests concurrently. Writes a JSON formatted string with an id, status success or fail and response.
      *
-     * @param port the port number to bind the server to
+     * @param port the port number to bind the server to, cannot be 4949
      * @param n    the number of concurrent requests the server can handle, cannot be negative.
      */
     public WikiMediatorServer(int port, int n) {
         this.port = port;
         this.clientLimit = n;
         try {
-            serverSocket = new ServerSocket(port);
+            if ((port <= 0 || port > 65535)) {
+                throw new Exception("Port number not allowed.");
+            }
+            serverSocket = new ServerSocket(this.port);
+            serve();
         } catch (IOException e) {
             System.out.print("Exception thrown creating server socket.");
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void wikiServe() {
+    private void serve() {
         try {
-            if ((port <= 0 || port > 65535)) {
-                throw new Exception("Port issue.");
-            }
-
             System.out.println("Running");
 
             // create socket and connect client
-            Boolean listening = true;
-
-            while (listening) {
+            while (true) {
                 System.out.println("Thread started");
+                // waits until one client stops using the server until new client is connected
                 Socket clientSocket = serverSocket.accept();
                 Thread wikiClientHandler = new Thread(new Runnable() {
                     public void run() {
                         try {
                             try {
-                                wikiServerThread(clientSocket);
+                                if (activeClients < clientLimit) {
+                                    wikiServerThread(clientSocket);
+                                } else {
+                                    while (activeClients >= clientLimit) {
+                                        Thread.sleep(10);
+                                    }
+                                    wikiServerThread(clientSocket);
+                                }
                             } finally {
                                 clientSocket.close();
                             }
-                        } catch (IOException ioe) {
+                        } catch (IOException | InterruptedException ioe) {
                             ioe.printStackTrace();
                         }
                     }
@@ -94,9 +100,6 @@ public class WikiMediatorServer {
                 wikiClientHandler.start();
             }
 
-        } catch (InterruptedException ie) {
-            System.out.println("Interrupted exception");
-            ie.printStackTrace();
         } catch (IOException ioe) {
             System.out.println("Issue with socketing.");
             ioe.printStackTrace();
@@ -209,16 +212,10 @@ public class WikiMediatorServer {
         response.addProperty("response", wikiM.peakLoad30s());
     }
 
-    private void wikiServerThread(Socket cSocket) throws IOException {
-        if (activeClients > clientLimit) {
-            System.out.println("Too many clients, please try again later.");
-            cSocket.close();
-        }
-
-        System.out.println("New client connected");
+    private void wikiServerThread(Socket cSocket) throws IOException, InterruptedException {
         activeClients++;
+        System.out.println("New client connected");
 
-        // create reader and writer
         PrintWriter writer =
                 new PrintWriter(new OutputStreamWriter(cSocket.getOutputStream()), true);
         BufferedReader reader =
@@ -226,6 +223,7 @@ public class WikiMediatorServer {
 
         System.out.println("reader and writer created");
         String jsonString;
+
         for (jsonString = reader.readLine(); jsonString != null; jsonString = reader.readLine()) {
             System.out.println("read line " + jsonString);
             // parsing to json object
@@ -240,6 +238,7 @@ public class WikiMediatorServer {
 
                 // for timeout thread race
                 AtomicInteger winner = new AtomicInteger(0);
+
                 //THREAD
                 Thread process = new Thread(new Runnable() {
                     @Override
@@ -281,16 +280,20 @@ public class WikiMediatorServer {
                 int resultOfRace = winner.get();
                 System.out.println(resultOfRace);
 
+                // stop both threads
                 timer.interrupt();
                 process.interrupt();
 
+                // if no timeout
                 if (resultOfRace == 1) {
                     response.remove("status");
                     response.addProperty("status", "success");
                     System.out.println("Parsed and ready: " + response.toString());
                     writer.println(response.toString());
                     System.out.println("sent: " + response.toString());
-                } else {
+                }
+                // if timeout
+                else {
                     JsonElement timeoutResult = JsonParser.parseString(timeoutReply);
                     JsonObject result = timeoutResult.getAsJsonObject();
                     result.add("id", inputQuery.get("id"));
@@ -298,6 +301,7 @@ public class WikiMediatorServer {
                     System.out.println("sent: " + response.toString());
                 }
             } else {
+                // no response received
                 response.remove("status");
                 response.addProperty("status", "failed");
                 System.out.println("Failed ready to send: " + response.toString());
@@ -312,14 +316,13 @@ public class WikiMediatorServer {
 
         writer.flush();
         reader.close();
-        cSocket.close();
         activeClients--;
     }
 
     public static void main(String[] args) {
         try {
-            WikiMediatorServer wikiServer = new WikiMediatorServer(555, 1);
-            wikiServer.wikiServe();
+            WikiMediatorServer wikiServer = new WikiMediatorServer(DEFAULT_PORT, 10000);
+            wikiServer.serve();
         } catch (Exception e) {
             e.printStackTrace();
         }
