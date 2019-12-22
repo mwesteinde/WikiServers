@@ -41,6 +41,8 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     // Wiki has domain en.wikipedia.org
     // callCache size >= 0
 
+    //Thread Safety Argument: All methods that use public variables have locks.
+
     /* a cache to store search results */
     private Cache wikiCache = new Cache();
 
@@ -223,17 +225,14 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
             return new ArrayList<>();
         }
 
-        // could work?
-        TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
-        Instant now = Instant.now();
-
-        List<String> sortedQueries = getListReturned();
-
+        //TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
+        //Instant now = Instant.now();
         // filters queries within last 30 seconds and gets their string values
         //List<String> sortedQueries = qTree.descendingSet().stream()
         //        .filter(q -> q.within30S(now))
         //        .map(Query::getQuery)
         //        .collect(Collectors.toList());
+        List<String> sortedQueries = getListReturned();
 
         // returns <= the limit of queries allowed
         if (sortedQueries.size() <= limit) {
@@ -267,7 +266,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      *
      * @param query The query input to a method in this WikiMediator, cannot be empty.
      */
-    private void queried(String query) {
+    private synchronized void queried(String query) {
         if (qMap.containsKey(query)) {
             Query qToUpdate = qMap.get(query);
             qToUpdate.update(query);
@@ -281,7 +280,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      *
      * @param callType The type of method that has been called, cannot be empty.
      */
-    private void call(String callType) {
+    private synchronized void call(String callType) {
 
             callCache.put(new MethodCall(callType));
 
@@ -312,6 +311,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
 
                 line = reader.readLine();
             }
+            //source: https://stackoverflow.com/questions/26717422/converting-hashmap-to-sorted-arraylist
             List<Map.Entry<String,Integer>> entries = new ArrayList<Map.Entry<String,Integer>>(
                     map.entrySet());
             Collections.sort(entries,new Comparator<Map.Entry<String,Integer>>() {
@@ -337,6 +337,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
         return returned;
     }
 
+    //Gets the data needed for
     private synchronized List<String> commonQueriesFromFile() {
         List <String> returned = new ArrayList<>();
         Map <String, Integer> map = new HashMap<>();
@@ -374,11 +375,10 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
 
 
         } catch (FileNotFoundException e) {
-
-
-
+            System.out.println("The file to read was not found");
+            e.printStackTrace();
         } catch (IOException e1) {
-
+            e1.printStackTrace();
         }
 
         return returned;
@@ -400,13 +400,11 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
                 line = reader.readLine();
             }
 
-
         } catch (FileNotFoundException e) {
-
-
-
+            System.out.println("The file to read was not found");
+            e.printStackTrace();
         } catch (IOException e1) {
-
+            e1.printStackTrace();
         }
         return count;
     }
@@ -437,7 +435,8 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * @param startPage A potential Wikipedia page name, cannot be empty.
      * @param stopPage A potential Wikipedia page name, cannot be empty.
      * @return A list of pages that are on the link path between startPage and stopPage,
-     * returns an empty list if one of the pages does not exist or the pages cannot be linked.
+     * returns an empty list if one of the pages does not exist or the pages cannot be linked
+     * in less than approximately 5 minutes (within 2 seconds).
      */
     public List<String> getPath(String startPage, String stopPage) {
         List <String> path = new ArrayList<>();
@@ -446,46 +445,51 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
             path.add(startPage);
             return path;
         }
-        path.add(startPage);
-        String next = startPage;
-        while (true) {
-            next = findBestLink(wiki.getLinksOnPage(next), path, stopPage);
-            if (next.equals(stopPage)) {
-                path.add(next);
-                break;
-            }
+
+        Node<String> current = makeTree(startPage, stopPage);
+        if (current == null) {
+            return path;
         }
+
+        while (!current.getValue().equals(startPage)) {
+            path.add(0, current.getValue());
+            current = current.getParent();
+        }
+
+        path.add(0, startPage);
 
         return path;
     }
 
+    private Node<String> makeTree(String startPage, String stopPage) {
+        Long time = System.currentTimeMillis();
+        Set<String> visited = new HashSet<>();
+        String current = startPage;
+        Queue<Node<String>> queue = new ArrayDeque<>();
+        Node<String> start = new Node(startPage);
+        queue.add(start);
 
-    private String findBestLink(List<String> links, List<String> path, String endPage) {
-        String best;
-        Map <String, Integer> map = new HashMap<>();
-
-
-        for (String i: links) {
-            if (i.equals(endPage)) {
-                return i;
+        while (!queue.isEmpty()) {
+            if (System.currentTimeMillis() - time > 4.99 * 60 * 1000) {
+                return null;
             }
-            int val = getValue(i, endPage);
-            map.put(i, val);
+            Node n = queue.remove();
+            List<String> links = wiki.getLinksOnPage((String)n.getValue());
+            for (String i: links) {
+                Node node = new Node(i);
+                n.neighbors.add(node);
+                node.parent = n;
+                queue.add(node);
+                if (i.equals(stopPage)) {
+                    return node;
+                }
+            }
+            visited.add((String)n.getValue());
         }
-
-        best = Collections.max(map.entrySet(), (entry1, entry2) -> entry1.getValue() - entry2.getValue()).getKey();
-
-        return best;
+        return null;
     }
 
-    private int getValue(String link, String endPage) {
-        int value = 0;
 
-        String text = wiki.getPageText(endPage);
-
-
-        return value;
-    }
 
 
 
