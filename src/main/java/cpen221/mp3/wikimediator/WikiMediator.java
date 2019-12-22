@@ -191,6 +191,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * WikiMediator.
      */
     public List<String> zeitgeist(int limit) {
+        //commented out sections are for task1 if no access to local directory
         call("basicRequest");
         writeToLocal("zeitgeist", "null");
 
@@ -219,6 +220,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * and `getPage` within the last 30 seconds.
      */
     public List<String> trending(int limit) {
+        //commented out sections are for task1 if no access to local directory
         call("basicRequest");
         writeToLocal("trending", "null");
         if (limit == 0) {
@@ -250,6 +252,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * this WikiMediator. peakload30s counts as a method call.
      */
     public int peakLoad30s() {
+        //commented out sections are for task1 if no access to local directory
         call("basicRequest");
         writeToLocal("peakLoad30s","null");
         return allMethodsCount30s();
