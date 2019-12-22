@@ -4,13 +4,14 @@ import com.google.gson.JsonObject;
 import cpen221.mp3.cache.Cache;
 import cpen221.mp3.cache.NotPresentException;
 import cpen221.mp3.cache.StringCacheable;
+import cpen221.mp3.server.WikiClient;
 import cpen221.mp3.server.WikiMediatorServer;
 import cpen221.mp3.wikimediator.WikiMediator;
 import fastily.jwiki.core.Wiki;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,8 +23,7 @@ public class Tests {
         as cpen221.mp3.cache.
      */
 
-    @Test
-    public void simpleSearchTest() {
+    @Test public void simpleSearchTest() {
         WikiMediator wikiM = new WikiMediator();
         Wiki wiki = new Wiki("en.wikipedia.org");
         String query = "UBC";
@@ -94,18 +94,24 @@ public class Tests {
 
 
     @Test
-    public void zeitgeistTest() {
+    public void zeitgeistTest() throws IOException {
         WikiMediator wikiM = new WikiMediator();
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
 
-        for (int i = 0; i < 3; i++) {
+        for(int i = 0; i < 3; i++) {
             wikiM.getPage("hello");
         }
         for (int i = 0; i < 1; i++) {
             wikiM.getPage("UBC");
         }
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0 ; i < 4; i++) {
             wikiM.simpleSearch("zeitgeist", 3);
         }
+        for (int i = 0 ; i < 2; i++) {
+            wikiM.getConnectedPages("Barack Obama", 1);
+        }
+
 
         ArrayList<String> expected = new ArrayList<>();
         expected.add("zeitgeist");
@@ -113,28 +119,32 @@ public class Tests {
         List actual2 = wikiM.zeitgeist(4);
         ArrayList<String> expected2 = new ArrayList<>();
         expected2.add("zeitgeist");
-        expected2.add("UBC");
         expected2.add("hello");
+        expected2.add("UBC");
+
 
 
         Assert.assertEquals(expected, actual);
+        Assert.assertEquals(expected2, actual2);
 
     }
 
     @Test
-    public void trendingTest() throws InterruptedException {
+    public void trendingTest() throws InterruptedException, IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
         WikiMediator wikiM = new WikiMediator();
 
-        for (int i = 0; i < 3; i++) {
+        for(int i = 0; i < 3; i++) {
             wikiM.getPage("hello");
         }
         for (int i = 0; i < 1; i++) {
             wikiM.getPage("UBC");
         }
 
-        Thread.sleep(31 * 1000);
+        Thread.sleep(31*1000);
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0 ; i < 4; i++) {
             wikiM.simpleSearch("zeitgeist", 3);
         }
 
@@ -149,24 +159,63 @@ public class Tests {
     }
 
     @Test
-    public void trendingTest2() throws InterruptedException {
+    public void trendingTestRepeated() throws InterruptedException, IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
         WikiMediator wikiM = new WikiMediator();
 
-        for (int i = 0; i < 3; i++) {
+        for(int i = 0; i < 3; i++) {
+            wikiM.getPage("hello");
+        }
+        for (int i = 0; i < 1; i++) {
+            wikiM.getPage("UBC");
+        }
+
+        for (int i = 0 ; i < 4; i++) {
+            wikiM.simpleSearch("zeitgeist", 3);
+        }
+
+        Thread.sleep(31*1000);
+
+        for (int i = 0 ; i < 3; i++) {
+            wikiM.simpleSearch("zeitgeist", 3);
+        }
+
+        for (int i = 0 ; i < 4; i++) {
+            wikiM.simpleSearch("Barack Obama", 3);
+        }
+
+
+
+        ArrayList<String> expected = new ArrayList<>();
+        expected.add("Barack Obama");
+
+        Assert.assertEquals(expected, wikiM.trending(1));
+
+        Assert.assertTrue(wikiM.trending(0).isEmpty());
+    }
+
+    @Test
+    public void trendingTest2() throws InterruptedException, IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
+        WikiMediator wikiM = new WikiMediator();
+
+        for (int i = 0 ; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
         }
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0 ; i < 4; i++) {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(5 * 1000);
+        Thread.sleep(5*1000);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0 ; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
         }
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0 ; i < 6; i++) {
             wikiM.getPage("UBC");
         }
         Assert.assertTrue(wikiM.checkRep());
@@ -182,7 +231,7 @@ public class Tests {
     }
 
     @Test
-    public void simpleSearchTest2() {
+    public void simpleSearchTest2() throws IOException {
         WikiMediator wikiM = new WikiMediator();
 
         Wiki wiki = new Wiki("en.wikipedia.org");
@@ -196,24 +245,26 @@ public class Tests {
     }
 
     @Test
-    public void peakLoad30sTest() throws InterruptedException {
+    public void peakLoad30sTest() throws InterruptedException, IOException {
         WikiMediator wikiM = new WikiMediator();
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0 ; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
         }
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0 ; i < 4; i++) {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(5 * 1000);
+        Thread.sleep(5*1000);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0 ; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
         }
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0 ; i < 6; i++) {
             wikiM.getPage("UBC");
         }
 
@@ -222,49 +273,53 @@ public class Tests {
     }
 
     @Test
-    public void peakLoad30sTestTime() throws InterruptedException {
+    public void peakLoad30sTestTime() throws InterruptedException, IOException {
         WikiMediator wikiM = new WikiMediator();
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0 ; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
         }
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0 ; i < 4; i++) {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(60 * 1000);
+        Thread.sleep(60*1000);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0 ; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
         }
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0 ; i < 6; i++) {
             wikiM.getPage("UBC");
         }
 
         Assert.assertEquals(12, wikiM.peakLoad30s());
-    }
+}
 
     @Test
-    public void peakLoad30sTestTime2() throws InterruptedException {
+    public void peakLoad30sTestTime2() throws InterruptedException, IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage"));
+        writer.flush();
         WikiMediator wikiM = new WikiMediator();
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0 ; i < 3; i++) {
             wikiM.simpleSearch("zeitgeist", 1);
         }
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0 ; i < 4; i++) {
             wikiM.simpleSearch("hi", 1);
         }
 
-        Thread.sleep(31 * 1000);
+        Thread.sleep(31*1000);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0 ; i < 5; i++) {
             wikiM.simpleSearch("goodbye", 1);
         }
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0 ; i < 6; i++) {
             wikiM.getPage("UBC");
         }
 
@@ -282,7 +337,7 @@ public class Tests {
 
     @Test(expected = NotPresentException.class)
     public void cacheFullTest() throws NotPresentException, InterruptedException {
-        Cache thisCache = new Cache(5, 1000);
+        Cache thisCache = new Cache(5,1000);
 
         thisCache.put(sc1);
         Thread.sleep(1);
@@ -311,7 +366,7 @@ public class Tests {
 
     @Test
     public void cacheUpdateTest() throws NotPresentException, InterruptedException {
-        Cache thisCache = new Cache(7, 1000);
+        Cache thisCache = new Cache(7,1000);
 
         thisCache.put(sc1);
         Thread.sleep(1);
@@ -335,8 +390,8 @@ public class Tests {
     }
 
     @Test
-    public void cacheTouchTest() throws NotPresentException, InterruptedException {
-        Cache thisCache = new Cache(7, 1000);
+    public void cacheTouchTest() throws NotPresentException, InterruptedException{
+        Cache thisCache = new Cache(7,1000);
 
         thisCache.put(sc1);
         long time = System.currentTimeMillis();
@@ -356,6 +411,8 @@ public class Tests {
         Assert.assertEquals(thisCache.get("a"), sc1);
     }
 
+
+/**
     @Test
     public void getPath() {
         WikiMediator wikiM = new WikiMediator();
@@ -365,7 +422,7 @@ public class Tests {
 
         List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
         for (int i = 0; i < wikiMConnections.size() - 1; i++) {
-            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i + 1)));
+            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i+1)));
         }
         Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
 
@@ -380,7 +437,7 @@ public class Tests {
 
         List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
         for (int i = 0; i < wikiMConnections.size() - 1; i++) {
-            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i + 1)));
+            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i+1)));
         }
         Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
 
@@ -395,11 +452,11 @@ public class Tests {
 
         List<String> wikiMConnections = wikiM.getPath(startPage, stopPage);
         for (int i = 0; i < wikiMConnections.size() - 1; i++) {
-            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i + 1)));
+            Assert.assertTrue(wiki.getLinksOnPage(wikiMConnections.get(i)).contains(wikiMConnections.get(i+1)));
         }
         Assert.assertTrue(wikiMConnections.get(wikiMConnections.size() - 1).equals(stopPage));
 
     }
-
+*/
 
 }

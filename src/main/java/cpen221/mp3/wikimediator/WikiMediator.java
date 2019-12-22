@@ -1,10 +1,15 @@
 package cpen221.mp3.wikimediator;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import cpen221.mp3.cache.Cache;
 import cpen221.mp3.cache.NotPresentException;
 import cpen221.mp3.cache.StringCacheable;
 import fastily.jwiki.core.Wiki;
 
+import java.io.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -83,6 +88,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> simpleSearch(String query, int limit) {
         call("search");
+        writeToLocal("basic", query);
         try {
             if (query.equals("")) {
                 throw new NullPointerException();
@@ -107,6 +113,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      * returns an empty string otherwise.
      */
     public String getPage(String pageTitle) {
+        writeToLocal("basic", pageTitle);
         try {
             call("search");
             queried(pageTitle);
@@ -140,6 +147,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> getConnectedPages(String pageTitle, int hops) {
         call("basicRequest");
+        writeToLocal("getConnectedPages", pageTitle);
 
         if (!wiki.exists(pageTitle)) {
             return new ArrayList<>();
@@ -182,14 +190,14 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> zeitgeist(int limit) {
         call("basicRequest");
+        writeToLocal("zeitgeist", "null");
 
         TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
-
-        // filters queries within last 30 seconds and gets their string values
-        List<String> commonQueries = qTree.descendingSet().stream()
-                .sorted(Comparator.comparingInt(Query::getNumQueries).reversed())
-                .map(Query::getQuery)
-                .collect(Collectors.toList());
+        List<String> commonQueries = commonQueriesFromFile();
+       // List<String> commonQueries = qTree.descendingSet().stream()
+       //         .sorted(Comparator.comparingInt(Query::getNumQueries).reversed())
+       //         .map(Query::getQuery)
+       //         .collect(Collectors.toList());
 
         if(commonQueries.size() < limit) {
             return commonQueries;
@@ -210,7 +218,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public List<String> trending(int limit) {
         call("basicRequest");
-
+        writeToLocal("trending", "null");
         if (limit == 0) {
             return new ArrayList<>();
         }
@@ -219,11 +227,13 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
         TreeSet<Query> qTree = new TreeSet<>(this.qMap.values());
         Instant now = Instant.now();
 
+        List<String> sortedQueries = getListReturned();
+
         // filters queries within last 30 seconds and gets their string values
-        List<String> sortedQueries = qTree.descendingSet().stream()
-                .filter(q -> q.within30S(now))
-                .map(Query::getQuery)
-                .collect(Collectors.toList());
+        //List<String> sortedQueries = qTree.descendingSet().stream()
+        //        .filter(q -> q.within30S(now))
+        //        .map(Query::getQuery)
+        //        .collect(Collectors.toList());
 
         // returns <= the limit of queries allowed
         if (sortedQueries.size() <= limit) {
@@ -242,7 +252,9 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      */
     public int peakLoad30s() {
         call("basicRequest");
-        return callCache.getMaxCached();
+        writeToLocal("peakLoad30s","null");
+        return allMethodsCount30s();
+       // return callCache.getMaxCached();
     }
 
     /* //////////////////////////////////////////////////////////////////////////////// */
@@ -276,6 +288,147 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
             this.qTree = new TreeSet<>(this.qMap.values());
     }
 
+    private synchronized List<String> getListReturned() {
+        List <String> returned = new ArrayList<>();
+        Map <String, Integer> map = new HashMap<>();
+
+        try  {
+            Long now = System.currentTimeMillis();
+            BufferedReader reader = new BufferedReader(new FileReader("local/CacheStorage"));
+            String line = reader.readLine();
+            while (line != null) {
+                JsonObject obj = (JsonObject) JsonParser.parseString(line);
+                if (now - obj.get("timestamp").getAsLong() < 30 * 1000) {
+                    if ((obj.get("method").getAsString()).equals("basic")) {
+                        String query = obj.get("query").getAsString();
+                        if (map.containsKey(query)) {
+                            int val = map.get(query);
+                            map.put(query, val + 1);
+                        } else {
+                            map.put(query, 1);
+                        }
+                    }
+                }
+
+                line = reader.readLine();
+            }
+            List<Map.Entry<String,Integer>> entries = new ArrayList<Map.Entry<String,Integer>>(
+                    map.entrySet());
+            Collections.sort(entries,new Comparator<Map.Entry<String,Integer>>() {
+                        public int compare(Map.Entry<String,Integer> a, Map.Entry<String,Integer> b) {
+                            return Integer.compare(b.getValue(), a.getValue());
+                        }
+                    }
+            );
+            for (Map.Entry<String,Integer> e : entries) {
+                returned.add(e.getKey());
+            }
+
+
+
+        } catch (FileNotFoundException e) {
+
+
+
+        } catch (IOException e1) {
+
+        }
+
+        return returned;
+    }
+
+    private synchronized List<String> commonQueriesFromFile() {
+        List <String> returned = new ArrayList<>();
+        Map <String, Integer> map = new HashMap<>();
+
+        try  {
+            Long now = System.currentTimeMillis();
+            BufferedReader reader = new BufferedReader(new FileReader("local/CacheStorage"));
+            String line = reader.readLine();
+            while (line != null) {
+                JsonObject obj = (JsonObject) JsonParser.parseString(line);
+                if ((obj.get("method").getAsString()).equals("basic")) {
+                    String query = obj.get("query").getAsString();
+                    if (map.containsKey(query)) {
+                        int val = map.get(query);
+                        map.put(query, val + 1);
+                    } else {
+                        map.put(query, 1);
+                    }
+                }
+
+                line = reader.readLine();
+            }
+            List<Map.Entry<String,Integer>> entries = new ArrayList<Map.Entry<String,Integer>>(
+                    map.entrySet());
+            Collections.sort(entries,new Comparator<Map.Entry<String,Integer>>() {
+                        public int compare(Map.Entry<String,Integer> a, Map.Entry<String,Integer> b) {
+                            return Integer.compare(b.getValue(), a.getValue());
+                        }
+                    }
+            );
+            for (Map.Entry<String,Integer> e : entries) {
+                returned.add(e.getKey());
+            }
+
+
+
+        } catch (FileNotFoundException e) {
+
+
+
+        } catch (IOException e1) {
+
+        }
+
+        return returned;
+    }
+
+    private synchronized int allMethodsCount30s() {
+        int count = 0;
+        try  {
+            Long now = System.currentTimeMillis();
+            BufferedReader reader = new BufferedReader(new FileReader("local/CacheStorage"));
+            String line = reader.readLine();
+            while (line != null) {
+                JsonObject obj = (JsonObject) JsonParser.parseString(line);
+                int i = 0;
+                Long l = obj.get("timestamp").getAsLong();
+                if ((now - l) < 30 * 1000) {
+                    count++;
+                }
+                line = reader.readLine();
+            }
+
+
+        } catch (FileNotFoundException e) {
+
+
+
+        } catch (IOException e1) {
+
+        }
+        return count;
+    }
+
+    private synchronized void writeToLocal(String method, String pageTitle) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("local/CacheStorage", true));
+
+            JsonObject json = new JsonObject();
+            Long timestamp = System.currentTimeMillis();
+
+            json.addProperty("query", pageTitle);
+            json.addProperty("method", method);
+            json.addProperty("timestamp", timestamp);
+            writer.write(json.toString());
+            writer.write("\n");
+            writer.flush();
+        } catch (IOException e) {
+            System.out.print("Exception thrown creating filewriter");
+        }
+    }
+
     // 3A
     /**
      * Gets a path of links from one specified Wikipedia page to another. If the page does
@@ -289,97 +442,53 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     public List<String> getPath(String startPage, String stopPage) {
         List <String> path = new ArrayList<>();
         call("getPath");
-        List<String> path1 = pathToEarth(startPage);
-        List<String> path2 = pathToEarth(stopPage);
+        if (startPage.equals(stopPage)) {
+            path.add(startPage);
+            return path;
+        }
         path.add(startPage);
-        for (int i = 0; i < path1.size(); i++) {
-            path.add(path1.get(i));
-        }
-        path.add("Earth");
-        for (int i = path2.size() - 1; i >= 0; i--) {
-            path.add(path2.get(i));
-        }
-        path.add(stopPage);
-
-        return path;
-    }
-
-    private List<String> pathToEarth(String startPage) {
-        List<String> path = new ArrayList<>();
-        List<String> links = wiki.getLinksOnPage(startPage);
+        String next = startPage;
         while (true) {
-            String next = findBestLink(links, path);
-            if (next.equals("Earth") || (next.equals("earth"))) {
-                break;
-            } else {
+            next = findBestLink(wiki.getLinksOnPage(next), path, stopPage);
+            if (next.equals(stopPage)) {
                 path.add(next);
-                links = wiki.getLinksOnPage(next);
+                break;
             }
         }
 
         return path;
     }
 
-    private String findBestLink(List<String> links, List<String> path) {
-        String best = "b";
-        String c = "countries";
 
-        Map<String, Integer> map = new HashMap<>();
-        if (links.contains("Earth")) {
-            return "Earth";
-        }
-        if (links.contains("earth")) {
-            return "earth";
-        }
+    private String findBestLink(List<String> links, List<String> path, String endPage) {
+        String best;
+        Map <String, Integer> map = new HashMap<>();
+
+
         for (String i: links) {
-            if (wiki.getCategoriesOnPage(i).contains("Category:Continents")) {
+            if (i.equals(endPage)) {
                 return i;
             }
+            int val = getValue(i, endPage);
+            map.put(i, val);
         }
-        for (String i: links) {
-            List <String> categories = wiki.getCategoriesOnPage(i);
-            if (categories.contains("Category:Countries in South America") ||
-                    categories.contains("Category:Countries in Europe") ||
-                    categories.contains("Category:Countries in North America") ||
-                    categories.contains("Category:Countries in Africa") ||
-                    categories.contains("Category:Countries in Latin America") ||
-                    categories.contains("Category:Countries in Oceania") ||
-                    categories.contains("Category:Countries in Australasia") ||
-                    categories.contains("Category:Countries in Asia")) {
-                return i;
-            }
-            }
-        for (String i: links) {
-            if (wiki.getPageText(i).contains("is a city")) {
-                return i;
-            }
-        }
-        for (String i: links) {
-            if (wiki.getCategoriesOnPage(i).contains("Category:Living People")) {
-                return i;
-            }
-        }
-        for (String i: links) {
-            if (!path.contains(i)) {
-                return i;
-            }
-        }
+
+        best = Collections.max(map.entrySet(), (entry1, entry2) -> entry1.getValue() - entry2.getValue()).getKey();
+
         return best;
     }
 
-    // 3B
-    /**
-     * Gets a list results from a specified query.
-     *
-     * @param query A specified query, cannot be empty.
-     * @return A list of results that correspond with the specified query. An empty list
-     * if no meaningful results are found. Leads to a failed operation when used over
-     * the network.
-     * @throws InvalidQueryException if the input query cannot be parsed.
-     */
-    public List<String> executeQuery(String query) throws InvalidQueryException {
-        return null;
+    private int getValue(String link, String endPage) {
+        int value = 0;
+
+        String text = wiki.getPageText(endPage);
+
+
+        return value;
     }
+
+
+
 
     /**
      * Checks the representation invariant.
