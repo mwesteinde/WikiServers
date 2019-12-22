@@ -41,6 +41,8 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
     // Wiki has domain en.wikipedia.org
     // callCache size >= 0
 
+    //Thread Safety Argument: All methods that use public variables have locks.
+
     /* a cache to store search results */
     private Cache wikiCache = new Cache();
 
@@ -264,7 +266,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      *
      * @param query The query input to a method in this WikiMediator, cannot be empty.
      */
-    private void queried(String query) {
+    private synchronized void queried(String query) {
         if (qMap.containsKey(query)) {
             Query qToUpdate = qMap.get(query);
             qToUpdate.update(query);
@@ -278,7 +280,7 @@ public class WikiMediator<InvalidQueryException extends Throwable> {
      *
      * @param callType The type of method that has been called, cannot be empty.
      */
-    private void call(String callType) {
+    private synchronized void call(String callType) {
 
             callCache.put(new MethodCall(callType));
 

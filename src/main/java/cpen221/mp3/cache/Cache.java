@@ -40,7 +40,7 @@ public class Cache<T extends Cacheable> {
     // timeout >= 0
     // The cache must not contain any objects that have been there longer than the timeout value.
 
-    // Thread safety argument: All methods that modify the cache
+    // Thread safety argument: All methods that modify the cache have locks
 
     private Map<T, Long> cache = new HashMap<>();
 
